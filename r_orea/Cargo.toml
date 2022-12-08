@@ -1,0 +1,11 @@
+[package]
+name = "r_orea"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+yaml-rust = "0.4"
+chrono = "0.4.23"
+pyo3 = {version ="0.16.4", features = ["extension-module"]}
