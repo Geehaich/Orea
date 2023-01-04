@@ -1,332 +1,126 @@
-import os
+from datetime import datetime
+from enum import Enum
 
 import yaml
-from enum import Enum
-from threading import current_thread
-from datetime import datetime
-from collections import deque
-import numpy as np
-import glm
+import orea_core
+import os
+import psutil
+from collections import deque,OrderedDict
 
-log_levels = ["FATAL", "ERROR", "WARNING", "INFO", "DEBUG"]
 
-class YAMLDoubleReader :
-    """Combine a binary and UTF-8 compatible file wrappers to allow backwards seeking"""
-    def __init__(self,file):
+class LogLevels(Enum) : #classic log levels for most applications
+    FATAL = 0
+    ERROR = 1
+    WARN = 2
+    INFO = 3
+    DEBUG = 4
+    TRACE = 5
 
-        self._bin_io = open(file,"rb")
-        self.utf_io = open(file,"r")
+class LogManagerWrapper :
+    """wrapper on LogManager rust struct providing convenience functions and type conversions to Rust compatible types."""
+    def __init__(self,fpath, deque_max_len = 25):
 
-    def tell(self):
-        return self.utf_io.tell()
+        if os.path.exists(fpath) == False :
+            open(fpath,"w").close()
+        self._logmanager = orea_core.LogManager(fpath)
 
-    def seek(self,offset,pos):
-        bin_position = self._bin_io.seek(offset,pos)
-        return self.utf_io.seek(bin_position,0)
-    def read(self,bytes = 1):
-        res = self.utf_io.read(bytes)
-        self._bin_io.seek(self.tell(),0)
-        return res
-    def readline(self,size=-1):
-        res = self.utf_io.readline(size)
-        self._bin_io.seek(self.tell(), 0)
-        return res
-    def read_lines(self,lines = 1):
-        count = 0
-        result = ""
-        for i in range(lines) :
-            result+=self.utf_io.readline()
-        self._bin_io.seek(self.utf_io.tell(),0)
-        return result
+        self.queue = deque(maxlen=deque_max_len)
+        self.cursor_date = datetime.fromisoformat(self._logmanager.current_entry().date)
 
-    def previous_line_bytes(self,bytes = -1):
-        """return the bytes between current position and previous \n, places the cursor on previous \n.
-        Returns None if called on the first line"""
+    #slice_up/slice_down c
+    def slice_up(self,n, header_cond_function = None, content_cond_function = None) :
+        """collect documents from the current one going up in the bound file (previous entries) and appends them in the deque, optionally filtering them using a header and content
+    #filtering function. this function does not move the cursor in the file"""
 
-        #case of first line
-        if self.tell()<=2 :
-            self.seek(0,0)
-            return None
+        interval = self._logmanager.slice_conditional(n,0,header_cond_function)
+        if content_cond_function is not None :
+            interval = [entry for entry in interval if content_cond_function(self,entry)==True]
+        self.queue.appendleft(interval)
+        self._logmanager.current_doc_extend = self.queue[-1].total_extension
 
-        #start position is \n, jump over
-        self.seek(-2,1)
-        start_pos = self.tell()
 
-        #iterate until previous \n or start of file
-        cur_char = b'0'
-        while self._bin_io.tell() >= 2 and cur_char!=b"\n":
-            cur_char = self._bin_io.read(1)
-            self._bin_io.seek(-2,1)
+    def slice_down(self, n, header_cond_function = None, content_cond_function = None) :
+        """same as slice_up in opposite directoin"""
 
-        #if not file start go back over \n to contain file
-        if cur_char ==b'\n':
-            self._bin_io.seek(2,1)
-        if(self._bin_io.tell() <=2):
-            self._bin_io.seek(0,0)
+        interval = self._logmanager.slice_conditional(0,n,header_cond_function)
+        if content_cond_function is not None :
+            interval = [entry for entry in interval if content_cond_function(self,entry)==True]
+        self.queue.append(interval)
+        self._logmanager.current_doc_extend = self.queue[0].total_extension
 
-        global_pos = self._bin_io.tell()
-        result_line = None
-        if bytes == -1 :
-            result_line = self._bin_io.read(start_pos-global_pos+1)
+    def move(self,amount : int) :
+        """move along documents, direction specified by sign of amount"""
+        self._logmanager.move_doc(amount)
+        if self._logmanager.current_entry() is not None :
+            self.cursor_date = datetime.fromisoformat(self._logmanager.current_entry().date)
         else :
-            result_line = self._bin_io.read(bytes)
+            if self._logmanager.file_byte_len()>0 and amount > 0 :
+                self.jump_last()
 
-        self._bin_io.seek(global_pos,0)
-        self.utf_io.seek(global_pos,0)
-        return result_line
+    def get_dict_fields(self,entry) :
+        """deserializes optional dict_fields, returns a python dict"""
+        if entry.dic_extension[1]==0 : #case no optionals
+            return None
+        else :
+            entry_string = self._logmanager.get_content(entry)
+            return yaml.load(entry_string,yaml.Loader)
 
+    def date_interval(self,d1 :datetime.date ,d2 : datetime.date, cond_func = None):
+        """returns all entries between two date objects (or any object for which __repr__ returns an ISO formated date string,
+        which also optionally meet a user defined criterium using a function of signature"""
 
-    def previous_document_extension(self):
-        """iterates backwards in file until next iteration of YAML document sign (---).
-            sets the stream offset to the beginning of document.
-            returns the position of both ends of said document."""
+        all_slice = self._logmanager.date_interval(str(d1),str(d2),None)
+        if cond_func is None :
+            return all_slice
+        else :
+            return [entry for entry in all_slice if cond_func(self,entry)==True]
 
-        self.previous_line_bytes() #go over ---
-        lower_pos = self._bin_io.tell()
+    def current_entry(self):
+        return self._logmanager.current_entry()
 
-        prev_line = b'0'
-        upper_pos = self._bin_io.tell()
-        while (prev_line is not None and prev_line !=b'---'):
-            prev_line = self.previous_line_bytes()
-            upper_pos = self._bin_io.tell()
-
-        if prev_line ==b'---':
-            self.readline()
-            upper_pos = self._bin_io.tell()
-        self.utf_io.seek(upper_pos,0)
-
-        return (upper_pos,lower_pos-upper_pos)
-
-    def next_document_extension(self):
-        """iterates forward until next yaml document delimiter. the extension covers the delimiter for consistency
-        with previous_document_extension, the --- will need to be removed during deserialization"""
-        upper_pos =self._bin_io.tell()
-        next_line = next_line = self.readline()
-        lower_pos = self._bin_io.tell()
-        while(next_line!="" and not next_line.startswith("---")):
-            next_line = self.readline()
-            lower_pos = self._bin_io.tell()
-
-        self.utf_io.seek(self._bin_io.tell(),0)
-        return (upper_pos,lower_pos-upper_pos)
-
-
-class LogManager :
-
-    def __init__(self, logfile_path):
-
-        self._reader = YAMLDoubleReader(logfile_path)
-        self._writer = open(logfile_path,"a")
-        self.current_doc_extend = None
-        self.jump_last()
-
-    def new_log(self,level,message,optional_dict = {}):
-        date = datetime.now()
-        thread = current_thread()
-        thread_str = "{0} | {1}".format(thread.name,thread.ident)
-        yam_dict = {"date": date, "level": level, "thread": thread_str, "message": message, "optional_dict": optional_dict}
-        yaml.dump(yam_dict,self._writer)
-    def peek(self):
-        """checks date and log level without deserializing the rest of an entry"""
-        byte_arr = self._reader.read(41) #date and level are fixed size in our format
-        if len(byte_arr)<41:
-            return (0,-1) #error state, most likely caused by EoF
-        date_bytes = byte_arr[6:32] #date is YYYY-MM-DD hh:mm:ss:uuuu , array comparison is equivalent to date comparison
-        level_byte = byte_arr[40]
-
-        self._reader.seek(-41,1) #go back to previous position
-        return (date_bytes,int(level_byte))
-
-    def move(self,amount):
-        xtend = self.current_doc_extend
-        if amount >0:
-            for i in range(amount):
-                xtend = self._reader.next_document_extension()
-        elif amount <0 :
-            if self._reader.tell()==0: #case of first entry
-                self.current_doc_extend = self._byte_jump(0)
-                return
-            for i in range(-amount):
-                xtend = self._reader.previous_document_extension()
-        self.current_doc_extend =xtend
-    def _byte_jump(self, byte_position):
-        """go to the beginning of the document containing a given byte position"""
-        self._reader.seek(byte_position,0)
-        self._reader.previous_document_extension() #move to beginning of document
-        self.current_doc_extend = self._reader.next_document_extension() #move to end to get full extension
-        self._reader.seek(self.current_doc_extend[0],0) #back to beginning
-
-    def jump_last(self):
-        """get latest entry"""
-        self._reader.seek(0,2)
-        self.current_doc_extend = self._reader.previous_document_extension()
+    def full_current_entry(self):
+        entry = self._logmanager.current_entry()
+        if entry.dic_extension[1] == 0 :
+            return entry,None
+        else :
+            D = yaml.load(self._logmanager.get_content(entry),yaml.Loader)
+            return entry,D
 
     def jump_first(self):
-        """get first entry"""
-        self._reader.seek(0,0)
-        self.current_doc_extend = self._reader.next_document_extension()
+        self._logmanager.jump_first()
 
-    def deserialize(self):
-        """deserialize current file as YAML object and replaces the offset back at the beginning of the document"""
+    def jump_last(self):
+        self._logmanager.jump_last()
 
-        if self.current_doc_extend is None :
-            return None
-        self._reader.seek(self.current_doc_extend[0],0)
-        content = self._reader.read(self.current_doc_extend[1])
-        if content.endswith("---\n"):
-            content = content[:-4]
+    def check_lock(self) :
+        lock_filename = self._logmanager.file_name + '.lock'
+        if os.path.exists(lock_filename) == False :
+            return False
+        else :
+            f_lock =  open(lock_filename,'r')
+            pid = int(f_lock.readline())
+            if psutil.pid_exists(pid) :
+                return True
+            else :
+                f_lock.close()
+                os.remove(lock_filename)
+                return False
+    def new_entry(self,message ="", level=0, process = "", serialize_dict = None) :
+        """add new entry to the file the manager object is connected to. uses lock files for eventual multiprocess access"""
+        while self.check_lock() == True :
+            pass
 
-        self._reader.seek(self.current_doc_extend[0],0)
-        return yaml.load(content,yaml.Loader)
+        lock_filename = self._logmanager.file_name + '.lock'
+        with open(lock_filename,"w") as f_lock :
+            f_lock.write(str(os.getpid()))
 
-    def document_string(self):
-        self._reader.seek(self.current_doc_extend[0],0)
-        content = self._reader.read(self.current_doc_extend[1])
-        if content.endswith("---\n"):
-            content = content[:-4]
+        date = datetime.now()
+        _level = level.value if isinstance(level,Enum) else level
+        content_dict = dict(OrderedDict({"date":date,"level":_level,"topic":process,"message":message}))
+        content_dict.update(serialize_dict)
+        with open(self._logmanager.file_name,'a') as dump_stream :
+            yaml.dump(content_dict,dump_stream,sort_keys=False)
+            dump_stream.write("---\n")
 
-        self._reader.seek(self.current_doc_extend[0], 0)
-        return content
-
-    def goto(self,date):
-        """search of entry with date closest to given. first using dichotomy to get closer then iterating over a few
-        entries to place the stream at the closest.
-
-        Date is a datetime object or the ISO string representation of one.
-        Returns nothing"""
-        targ_date = str(date)
-
-        cur_position= self.current_doc_extend[0]
-        max_byte = self._reader.seek(0,2) #check file byte count
-        self._reader.seek(cur_position,0)
-
-        soon_bound = 0
-        late_bound = max_byte
-
-        cur_date = self.peek()[0]
-        dc_stop_condition = False
-
-        while not dc_stop_condition :
-            cur_date = self.peek()[0]
-            cur_position = self._reader.tell()
-            if cur_date == targ_date :
-                return
-            elif cur_date > targ_date :
-                late_bound =  cur_position
-            elif cur_date < targ_date :
-                soon_bound = cur_position
-            self._byte_jump((soon_bound+late_bound)//2)
-
-            loop_position = self._reader.tell()
-            if loop_position == cur_position :
-                dc_stop_condition = True
-
-
-        if cur_date < targ_date :
-            while cur_date < targ_date :
-                self.move(1)
-                cur_date = self.peek()[0]
-            self.move(-1)
-        elif cur_date > targ_date :
-            while cur_date > targ_date :
-                self.move(-1)
-                cur_date = self.peek()[0]
-            self.move(1)
-
-
-    def slice_any(self,up:int,down:int):
-        """return a list of deserialised entries starting from the current position in both directions"""
-        start_exten = self.current_doc_extend
-        up_slice = []
-        for i in range(up) :
-            self.move(-1)
-            content = self.deserialize()
-            if content is not None:
-                up_slice.insert(0,self.deserialize()) #put at beginning to keep order
-
-
-        self._reader.seek(start_exten[0],0)
-        self.current_doc_extend = start_exten
-        down_slice = []
-        content = self.deserialize()
-        if content is not None :
-            down_slice.append(content)
-        for i in range(down) :
-            self.move(2)
-            content = self.deserialize()
-            if content is not None:
-                down_slice.append(content)
-
-        Lm._reader.seek(start_exten[0] if start_exten is not None else 0,0)
-        self.current_doc_extend = start_exten
-        return up_slice+down_slice
-
-    def slice_conditional(self,max_up:int,max_down:int,peek_func = None,serial_func = None):
-        """return a subset of entries in a slice around the current one meeting 2 criteria :
-            - one on the date and level , peek_func(self.peek) == true (avoids deserialization for simple date search
-            - one on the actual content (thread, and optional dict)"""
-
-
-        start_exten = self.current_doc_extend
-        up_slice = []
-        for i in range(max_up):
-            self.move(-1)  #go up the file
-            head = self.peek()
-            criteria_met = True
-            content = None
-            if peek_func is not None :  #check header against discriminating function if it exists
-                criteria_met = criteria_met and peek_func(head)
-            if serial_func is not None  and criteria_met == True: #if header is OK and a function exists for deserialized entries check results
-                content = self.deserialize()
-                criteria_met = criteria_met and serial_func(content)
-
-            if criteria_met== True :
-                content = self.deserialize()
-                if content is not None :
-                    up_slice.insert(0,content)
-
-        self._reader.seek(start_exten[0],0)
-        self.current_doc_extend = start_exten
-
-        down_slice = []
-
-        for i in range(max_down+1):
-
-            if i==0: #handle center of slice here by not moving on first call
-                self.move(2)
-            head = self.peek()
-            criteria_met = True
-            content = None
-            if peek_func is not None:
-                criteria_met = criteria_met and peek_func(head)
-            if serial_func is not None and criteria_met == True:  # if header is OK and the function exists check for actual content
-                content = self.deserialize()
-                criteria_met = criteria_met and serial_func(content)
-
-            if criteria_met== True:
-                content = self.deserialize()
-                if content is not None:
-                    down_slice.append(content)
-
-        self._reader.seek(start_exten[0], 0) #back to original entry
-        self.current_doc_extend = start_exten
-
-        return up_slice + down_slice
-
-
-
-
-
-if __name__=="__main__" :
-
-    def basic_peek_func(header) :
-        return header[1] ==0
-    def basic_serial_func(entry) :
-        return entry is not None and "b" in entry["optional_dict"].keys()
-
-
-    Lm = LogManager("/home/guillaume/repos/Orea/tests/grotest.yaml")
-    Lm.goto("2022-12-06 10:08:51.978201")
-    Sh = Lm.slice_conditional(15,15,basic_peek_func)
-    Sc = Lm.slice_conditional(60,60,None,basic_serial_func)
+        os.remove(lock_filename)
 
