@@ -25,28 +25,37 @@ class LogManagerWrapper :
         self._logmanager = orea_core.LogManager(fpath)
 
         self.queue = deque(maxlen=deque_max_len)
-        self.cursor_date = datetime.fromisoformat(self._logmanager.current_entry().date)
+
+        last_entry = self._logmanager.current_entry() #none if empty file
+        self.cursor_date = datetime.fromisoformat(last_entry.date) if last_entry is not None else None
 
     #slice_up/slice_down c
     def slice_up(self,n, header_cond_function = None, content_cond_function = None) :
         """collect documents from the current one going up in the bound file (previous entries) and appends them in the deque, optionally filtering them using a header and content
-    #filtering function. this function does not move the cursor in the file"""
+    #filtering function. moves the cursor up the file"""
 
         interval = self._logmanager.slice_conditional(n,0,header_cond_function)
         if content_cond_function is not None :
             interval = [entry for entry in interval if content_cond_function(self,entry)==True]
-        self.queue.appendleft(interval)
-        self._logmanager.current_doc_extend = self.queue[-1].total_extension
-
-
+        self.queue.extendleft(interval)
+        if len(self.queue)!=0:
+            self._logmanager.current_doc_extend = self.queue[-1].total_extension
     def slice_down(self, n, header_cond_function = None, content_cond_function = None) :
         """same as slice_up in opposite directoin"""
 
         interval = self._logmanager.slice_conditional(0,n,header_cond_function)
         if content_cond_function is not None :
             interval = [entry for entry in interval if content_cond_function(self,entry)==True]
-        self.queue.append(interval)
-        self._logmanager.current_doc_extend = self.queue[0].total_extension
+        self.queue.extend(interval)
+        if len(self.queue)!=0:
+            self._logmanager.current_doc_extend = self.queue[0].total_extension
+
+    def search_date(self,date):
+        """returns the entry with the specified date or the first one older than that. date should be a datetime object or an ISO date string """
+        if isinstance(date,datetime):
+            self._logmanager.search_date(str(date))
+        else :
+            self._logmanager.search_date(date)
 
     def move(self,amount : int) :
         """move along documents, direction specified by sign of amount"""
@@ -117,9 +126,10 @@ class LogManagerWrapper :
         date = datetime.now()
         _level = level.value if isinstance(level,Enum) else level
         content_dict = dict(OrderedDict({"date":date,"level":_level,"topic":process,"message":message}))
-        content_dict.update(serialize_dict)
-        with open(self._logmanager.file_name,'a') as dump_stream :
-            yaml.dump(content_dict,dump_stream,sort_keys=False)
+        if serialize_dict :
+            content_dict.update(serialize_dict)
+        with open(self._logmanager.file_name,'a',encoding="utf-8") as dump_stream :
+            yaml.dump(content_dict,dump_stream,sort_keys=False,allow_unicode=True)
             dump_stream.write("---\n")
 
         os.remove(lock_filename)

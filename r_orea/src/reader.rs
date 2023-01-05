@@ -146,7 +146,7 @@ impl YAMLReader
         let mut upper_pos = lower_pos;
 
         let mut prev_line_peek = vec![b'0'];
-        while prev_line_peek.is_empty()==false && prev_line_peek.eq(&delimiter) ==false
+        while upper_pos!=0 && prev_line_peek.is_empty()==false && prev_line_peek.eq(&delimiter) ==false
         {
             self.move_previous_line();
             prev_line_peek = self.peek_nbytes(4);
@@ -218,8 +218,8 @@ impl LogEntry
         if (self.level as usize) < CLASSIC_LOG_LEVELS.len() { rep.push_str(format!("{} | ",CLASSIC_LOG_LEVELS[self.level as usize]).as_str());}
         else { rep.push_str(format!("{} | ",self.level).as_str());}
 
-        if self.message.len()<40 { rep.push_str(format!("{} | {} | ",self.topic, self.message).as_str());}
-        else {rep.push_str(format!("{} | {}... | ",self.topic, &self.message[..40]).as_str())};
+        if self.message.char_indices().count()<50 { rep.push_str(format!("{} | {} | ",self.topic, self.message).as_str());}
+        else {rep.push_str(format!("{} | {}... | ",self.topic, &self.message[..self.message.char_indices().nth(50).unwrap().0]).as_str())};
         if self.dic_extension.1 != 0 { rep.push_str(" + YAML ");}
 
         Ok(rep)
@@ -263,6 +263,7 @@ impl LogEntry
         }
 
         str_mes = str_mes.splitn(2,": ").nth(1).unwrap().trim_end().to_string();
+        let str_mes = String::from(str_mes.as_str());
 
         let pos = lm.reader.stream_position().unwrap();
         let mut dic_xten : u64  =0;
