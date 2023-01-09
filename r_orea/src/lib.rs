@@ -2,6 +2,7 @@ use core::panic;
 use std::io::{BufWriter, Seek, SeekFrom, Read};
 use std::path::Path;
 use std::fs::File;
+use pyo3::ffi::PyEval_AcquireLock;
 use rand::Rng;
 use pyo3::prelude::*;
 
@@ -100,6 +101,16 @@ impl LogManager
         }
         //log levels are in  0-9 range, so 48-57 in ASCII table
         Ok((String::from_utf8(byte_arr[6..32].to_vec()).unwrap(), byte_arr[40] - 48 ))
+    }
+
+    pub fn is_first_entry(&mut self) -> PyResult<bool>
+    {
+        Ok(self.reader.stream_position().unwrap()==0)
+    }
+
+    pub fn is_last_entry(&mut self) -> PyResult<bool>
+    {
+        Ok ( self.reader.get_len().unwrap() - (self.current_doc_extend.0+self.current_doc_extend.1) <=4)
     }
 
     /// move_doc(amount,/)
@@ -467,7 +478,7 @@ impl LogManager
     /// --
     /// 
     /// get optional fields of a LogEntry as a string. YAML deserialization should be handled python-side to allow more genericity.
-    pub fn get_content(&mut self, entry : LogEntry) -> PyResult<String>
+    pub fn get_content(&mut self, entry : &LogEntry) -> PyResult<String>
     {
         if entry.dic_extension.1==0
         {
@@ -558,7 +569,17 @@ fn orea_core(_py:Python, m :&PyModule) -> PyResult<()>
 #[test]
 fn test_fun()
     {
-            let mut Lm = LogManager::new_from_path("/home/guillaume/repos/Orea/tests/empty.yaml");
-            println!("{:?}",Lm.current_doc_extend);
+        let gil = Python::acquire_gil();
+        let py = gil.python();
+
+        let mut Lm = LogManager::new_from_path("/home/guillaume/repos/Orea/tests/moby.yaml");
+        let s = Lm.slice_conditional(4, 0, py.None()).unwrap();
+        
+        for entry in s
+        {
+            let s = Lm.get_content(&entry).unwrap();
+            println!("{} {} {} {}",entry.date,entry.level,entry.message,s);
+        }
+        
     }
 

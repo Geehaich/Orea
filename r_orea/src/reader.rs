@@ -3,7 +3,8 @@ use std::io::{BufReader, Seek, SeekFrom, Read, BufRead,Result};
 use std::path::Path;
 use std::fs::File;
 use pyo3::prelude::*;
-
+use pyo3::basic::CompareOp;
+use pyo3::exceptions::PySyntaxError;
 use crate::LogManager;
 
 // static strings corresponding to first mandatory field names in YAML docs
@@ -141,7 +142,7 @@ impl YAMLReader
     pub fn previous_document_extension(&mut self) -> (u64, u64)
     {
         let delimiter = vec![b'-',b'-',b'-',b'\n'];
-        self.move_previous_line();
+        if self.peek_nbytes(4).eq(&delimiter)==false { self.move_previous_line();}
         let lower_pos = self.stream_position().unwrap();
         let mut upper_pos = lower_pos;
 
@@ -224,6 +225,24 @@ impl LogEntry
 
         Ok(rep)
     }
+    
+    fn is_equal(&self, other : &LogEntry) ->bool
+    {
+        self.date == other.date 
+            && self.level == other.level
+            && self.topic == other.topic
+            && self.total_extension == other.total_extension
+            && self.message == other.message
+    }
+
+    fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
+        match op {
+            CompareOp::Eq => Ok(self.is_equal(other)),
+            CompareOp::Ne => Ok(!self.is_equal(other)),
+            _=> Err(PyErr::new::<PySyntaxError, _>("only == and != operators are implemented for LogEntry."))
+        }
+    }
+
 }
 
 impl LogEntry
@@ -249,7 +268,13 @@ impl LogEntry
         let _ = lm.reader.read_line(&mut str_topic);
 
         let str_lev = str_lev.as_str(); //level is numeric in 0-99 range
-        let lev = str::parse::<u8>(&str_lev[(str_lev.len()-2)..].trim()).unwrap();
+        let lev = str::parse::<u8>(&str_lev[(str_lev.len()-2)..].trim());
+        let n_lev;
+        match lev
+        {
+            Ok(_l) => { n_lev = lev.unwrap();},
+            Err(_l) => { n_lev = 99 as u8;}
+        }
 
         str_date = str_date[DOC_FIELD_DATE.len()..].trim().to_string(); // line starts with "date: "
         str_topic = str_topic[DOC_FIELD_TOPIC.len()..].trim().to_string(); //"topic: "
@@ -275,7 +300,7 @@ impl LogEntry
         Some(LogEntry
          {
             date:str_date,
-            level :lev,
+            level :n_lev,
             topic: str_topic,
             message : str_mes,
             dic_extension : (pos, dic_xten),
