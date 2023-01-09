@@ -57,10 +57,9 @@ def write_thread_func(fpath,lock) :
 
 
 lock = threading.Lock()
-thlist1 = [threading.Thread(target = write_thread_func,args=[os.path.abspath("./tests/moby1.yaml"),lock]) for i in range(4)]
-thlist2 = [threading.Thread(target = write_thread_func,args=[os.path.abspath("./tests/moby2.yaml"),lock]) for i in range(4)]
-for i in range(len(thlist1)) :
-    thlist2[i].start()
-    thlist1[i].start()
-
-
+threadlist = []
+for j in range(100) :
+    threadlist += [threading.Thread(target = write_thread_func,args=[os.path.abspath("./tests/moby/moby{}.yaml").format(j),lock]) for i in range(4)]
+np.random.shuffle(threadlist)
+for thread in threadlist:
+    thread.start()

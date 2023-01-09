@@ -70,7 +70,12 @@ class LogController :
     def print_deque(self,fpath):
         fpath = os.path.abspath(fpath)
         for entry in self.log_mans[fpath].queue :
-            rich.print(self.prettify_entry(fpath,entry,full_output = self.is_fulltext))
+            try :
+                rich.print(self.prettify_entry(fpath,entry,full_output = self.is_fulltext))
+            except ValueError :
+                self.log_mans[fpath].search_date(entry.date)
+                rich.print(self.prettify_entry(fpath, entry, full_output=self.is_fulltext))
+                self.log_mans[fpath].search_date(self.log_mans[fpath].queue[-1])
 
 
     def print_last(self,fpath):
@@ -79,11 +84,14 @@ class LogController :
         self.log_mans[fpath].jump_last()
         entry = self.log_mans[fpath].current_entry()
         if entry is not None and self.filter(entry) :
-            rich_text = (self.prettify_entry(fpath,entry, full_output=self.is_fulltext))
-            if self.last_printed is None or self.last_printed != rich_text :
-                self.last_printed = rich_text
+            try :
+                rich_text = (self.prettify_entry(fpath,entry, full_output=self.is_fulltext))
+                if self.last_printed is None or self.last_printed != rich_text :
+                    self.last_printed = rich_text
+                    rich.print(rich_text)
+            except ValueError : #frequent calls might cause the last line of the entry to be cut
+                rich_text = (self.prettify_entry(fpath, entry, full_output=False)) + "[bold bright_red blink] (Err.Parsing)[/bold bright_red blink]"
                 rich.print(rich_text)
-
 
 
 

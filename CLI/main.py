@@ -17,8 +17,6 @@ def on_notify_func(controller) :
 #debug in console for now
 if __name__=="__main__" :
 
-
-    fpaths = [os.path.abspath("./tests/moby1.yaml"),os.path.abspath("./tests/moby2.yaml")]
+    fpaths = [os.path.abspath("./tests/moby/moby{}.yaml".format(i)) for i in range(100)]
     con = LogController(fpaths)
-    print(con.log_mans.keys())
     on_notify_func(con)
