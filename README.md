@@ -6,3 +6,4 @@ Orea is a simple python logging module used to write and parse rich log entries 
 
 ## TODO
 - a GUI
+coucou
