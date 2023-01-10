@@ -4,7 +4,7 @@ import time
 import threading
 sys.path.append(os.path.abspath("./"))
 import numpy as np
-from logic.loglib import LogManagerWrapper,LogLevels
+from orea.loglib import LogManagerWrapper,LogLevels
 
 #this script generates random entries every few milliseconds using several threads and is intended to test the updating functions and multithreading access to the same file.
 
@@ -42,24 +42,30 @@ def write_thread_func(fpath,lock) :
     n_thread += 1
     topic = fpath.split("/")[-1]
 
-    for i in range(30) :
-        time.sleep(np.random.randint(1000, 3000) / 1000)
+    for i in range(300) :
+        time.sleep(np.random.randint(1000, 3000) / 10000)
         message = ' '.join(np.random.choice(sample_text,np.random.randint(10,15)))
         d6 = np.random.randint(1,7)
         lock.acquire()
         try :
-            if d6>=5 :
+            if d6>=5:
                 Lm.new_entry(message, np.random.randint(0, 5), topic,{"mat4": np.random.randn(np.random.randint(2,4),np.random.randint(1,4))})
             else :
                 Lm.new_entry(message,np.random.randint(0,5),topic)
         finally :
             lock.release()
 
-
 lock = threading.Lock()
-threadlist = []
-for j in range(100) :
-    threadlist += [threading.Thread(target = write_thread_func,args=[os.path.abspath("./tests/moby/moby{}.yaml").format(j),lock]) for i in range(4)]
-np.random.shuffle(threadlist)
-for thread in threadlist:
-    thread.start()
+
+write_thread_func(os.path.abspath("./tests/moby/moby{}.yaml").format(0),
+					lock)
+
+#threadlist = []
+#for j in range(8) :
+    #threadlist += [threading.Thread(target = write_thread_func,args=[
+							#os.path.abspath("./tests/moby/moby{}.yaml").format(j),
+							#lock]) 
+						#for i in range(1)]
+#np.random.shuffle(threadlist)
+#for thread in threadlist:
+    #thread.start()

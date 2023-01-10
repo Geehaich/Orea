@@ -219,8 +219,9 @@ impl LogEntry
         if (self.level as usize) < CLASSIC_LOG_LEVELS.len() { rep.push_str(format!("{} | ",CLASSIC_LOG_LEVELS[self.level as usize]).as_str());}
         else { rep.push_str(format!("{} | ",self.level).as_str());}
 
-        if self.message.char_indices().count()<50 { rep.push_str(format!("{} | {} | ",self.topic, self.message).as_str());}
-        else {rep.push_str(format!("{} | {}... | ",self.topic, &self.message[..self.message.char_indices().nth(50).unwrap().0]).as_str())};
+        let maxline = 50;
+        if self.message.char_indices().count()<=maxline { rep.push_str(format!("{} | {} | ",self.topic, self.message).as_str());}
+        else {rep.push_str(format!("{} | {}... | ",self.topic, &self.message[..self.message.char_indices().nth(maxline).unwrap().0]).as_str())};
         if self.dic_extension.1 != 0 { rep.push_str(" + YAML ");}
 
         Ok(rep)
