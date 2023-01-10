@@ -16,19 +16,18 @@ class LogController :
 
         self.log_mans = {os.path.abspath(file): LogManagerWrapper(file) for file in tracked_files}
         self.is_paused = False
-        self.is_fulltext = True
+        self.is_fulltext = False
 
-        self.max_level = 3
+        self.max_level = 6
         self.topic_substring = ""
         self.message_substring = ""
         self.data_presence_idx = 2
         self.filter = None
-        self.last_entry_printed = None
         self.update_filter() #header filter
         for man in self.log_mans:
             self.log_mans[man].fill_queue(-1,self.filter)
 
-        self.last_printed = None
+        self.last_printed_date = "000"
 
         self.new_entries = 0 #keep track of new entries added while paused
     def prettify_entry(self, fpath:str, log_entry: orea_core.LogEntry, max_message_size=50, full_output=False,
@@ -77,20 +76,45 @@ class LogController :
                 self.log_mans[fpath].search_date(self.log_mans[fpath].queue[-1])
 
 
-    def print_last(self,fpath):
+    def print_until_last(self,fpath):
 
         fpath = os.path.abspath(fpath)
-        self.log_mans[fpath].jump_last()
+        mv = self.log_mans[fpath].move(1)
+        if mv is None : #case when already at EoF
+            return
         entry = self.log_mans[fpath].current_entry()
-        if entry is not None and self.filter(entry) :
+        if entry is None :
+            return
+
+        date_prev_entry = entry.date
+        if date_prev_entry == self.last_printed_date :
+            return
+
+        while True :
             try :
                 rich_text = (self.prettify_entry(fpath,entry, full_output=self.is_fulltext))
             except ValueError : #frequent calls might cause the last line of the entry to be cut
                 rich_text = (self.prettify_entry(fpath, entry, full_output=False)) + "[bold bright_red blink] (Err.Parsing)[/bold bright_red blink]"
             finally:
                 rich.print(rich_text)
+                self.last_printed_date = entry.date
+                mv = self.log_mans[fpath].move(1)
+                if mv is None :
+                    return
+                entry = self.log_mans[fpath].current_entry()
+                if entry.date == self.last_printed_date :
+                    return
 
-    def print_lopez(self,fpath):
+    def print_all_to_date(self):
+
+        pass
+        # log_keys = self.log_mans.keys()
+        # logs = np.array([self.log_mans[key].current_entry() for key in log_keys])
+        # dates = np.array([l.date for l in logs])
+        # while not logs
+
+
+    def print_plaintext(self,fpath):
     
         fpath = os.path.abspath(fpath)
         self.log_mans[fpath].jump_last()
@@ -100,6 +124,5 @@ class LogController :
             if self.last_entry_printed is None or self.last_entry_printed != entry:
                 print(entry)
                 self.last_entry_printed = entry
-        
 
 

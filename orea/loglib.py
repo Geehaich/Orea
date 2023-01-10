@@ -122,7 +122,10 @@ class LogManagerWrapper :
             self._logmanager.search_date(date)
 
     def move(self,amount : int) :
-        """move along documents, direction specified by sign of amount"""
+        """move along documents, direction specified by sign of amount.
+        moving past the last or first document places the cursor back on the extremal document and return None, so does
+        calling move on an empty file.
+        """
 
         if amount == 0 :
             return
@@ -133,6 +136,7 @@ class LogManagerWrapper :
         else :
             if self._logmanager.file_byte_len()>0 and amount > 0 :
                 self.jump_last()
+            return None
 
     def get_content(self,entry : orea_core.LogEntry) -> dict :
         return yaml.load(self._logmanager.get_content(entry),yaml.Loader)
@@ -164,22 +168,24 @@ class LogManagerWrapper :
     def jump_last(self):
         self._logmanager.jump_last()
 
-    def new_entry(self,message ="", level=0, process = "", serialize_dict = None) :
+    def new_entry(self,message ="", level=0, topic = "", serialize_dict = None) :
         """add new entry to the file the manager object is connected to. uses lock files for eventual multiprocess access"""
 
         date = datetime.now()
+        _level = level.value if isinstance(level, Enum) else level
+        if not serialize_dict : #print message directly without yaml dumping, saves a bit of performance
+            self.file.seek(os.SEEK_END)
+            self.file.write("date: {}\nlevel: {}\ntopic: {}\nmessage: {}\n---\n".format(date,_level,topic,message))
+            self.file.flush()
+            return
+
 
         with self.lock:
-            _level = level.value if isinstance(level,Enum) else level
-            content_dict = {"date":date,"level":_level,"topic":process,"message":message}
-            if serialize_dict:
-                content_dict.update(serialize_dict)
-            self.file.seek(os.SEEK_END)
-            written_bytes = yaml.dump(content_dict, self.file, sort_keys=False, allow_unicode=True)
-            #self.file.flush()
-            if written_bytes == 0 :
-                raise Exception("serializing failed")
-            else :
-                self.file.write("---\n")
 
+            content_dict = {"date":date,"level":_level,"topic":topic,"message":message}
+            content_dict.update(serialize_dict)
+            content_str = yaml.dump(content_dict, sort_keys=False, allow_unicode=True)+'---\n'
+            self.file.seek(os.SEEK_END)
+            self.file.write(content_str)
+            self.file.flush()
 
