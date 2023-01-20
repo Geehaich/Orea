@@ -25,11 +25,11 @@ def random_entry() :
 
 if __name__=="__main__":
     
-    file_p = open(sys.argv[2] if len(sys.argv)>=3 else 'test.yaml',"w")
+    file_p = open(sys.argv[2] if len(sys.argv)>=3 else 'test.yaml',"a")
     maxi = int(sys.argv[1])
 
     for i in range(maxi):
-        yaml.dump_all([random_entry() for j in range(10)],file_p,sort_keys=False,allow_unicode=True)
-        print("{0}    random entries generated in ./test.yaml \r".format(i*10),end="")
+        yaml.dump_all([random_entry() for j in range(100)],file_p,sort_keys=False,allow_unicode=True)
+        print("{0}    random entries generated in {1} \r".format(i*100,sys.argv[2]),end="")
         file_p.write("\n---\n")
     file_p.close()

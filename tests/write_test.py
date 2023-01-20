@@ -43,12 +43,11 @@ def write_thread_func(fpath,lock) :
     topic = fpath.split("/")[-1]
 
     for i in range(300) :
-        time.sleep(np.random.randint(1000, 3000) / 10000)
         message = ' '.join(np.random.choice(sample_text,np.random.randint(10,15)))
         d6 = np.random.randint(1,7)
         lock.acquire()
         try :
-            if d6>=5:
+            if d6>=4:
                 Lm.new_entry(message, np.random.randint(0, 5), topic,{"mat4": np.random.randn(np.random.randint(2,4),np.random.randint(1,4))})
             else :
                 Lm.new_entry(message,np.random.randint(0,5),topic)
@@ -57,15 +56,15 @@ def write_thread_func(fpath,lock) :
 
 lock = threading.Lock()
 
-write_thread_func(os.path.abspath("./tests/moby/moby{}.yaml").format(0),
-					lock)
+# write_thread_func(os.path.abspath("./tests/moby/moby{}.yaml").format(0),
+# 					lock)
 
-#threadlist = []
-#for j in range(8) :
-    #threadlist += [threading.Thread(target = write_thread_func,args=[
-							#os.path.abspath("./tests/moby/moby{}.yaml").format(j),
-							#lock]) 
-						#for i in range(1)]
-#np.random.shuffle(threadlist)
-#for thread in threadlist:
-    #thread.start()
+threadlist = []
+for j in range(8) :
+    threadlist += [threading.Thread(target = write_thread_func,args=[
+							os.path.abspath("./tests/moby/moby{}.yaml").format(j),
+							lock])
+						for i in range(1)]
+np.random.shuffle(threadlist)
+for thread in threadlist:
+    thread.start()

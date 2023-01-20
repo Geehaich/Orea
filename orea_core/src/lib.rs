@@ -2,15 +2,18 @@ use core::panic;
 use std::io::{BufWriter, Seek, SeekFrom, Read};
 use std::path::Path;
 use std::fs::File;
-use pyo3::ffi::PyEval_AcquireLock;
 use rand::Rng;
 use pyo3::prelude::*;
 
 use pyo3::types::{PyTuple};
 mod reader ;
-use reader::{YAMLReader,LogEntry};
+use reader::{YAMLReader,LogEntryCore};
 
+mod globals;
+use globals::{SPLIT_DELIMITER_BYTES_ENDL,SPLIT_DELIMITER_BYTES};
 
+#[cfg(test)]
+use pyo3::types::PyString;
 
 
 
@@ -234,34 +237,36 @@ impl LogManager
     /// move in the file from current document until a condition on the entry is met.
     /// direction is given by the sign of the direction argument : if >0, goes down, else up.
     /// Unlike most other functions, doesn't move the cursor back to where it was before function call.
-    pub fn move_until(&mut self, direction : i8 ,condition_func : PyObject) -> PyResult<Option<LogEntry>>
+    pub fn move_until(&mut self, direction : i8 ,condition_func : PyObject) -> PyResult<Option<LogEntryCore>>
     {
-        let gil = Python::acquire_gil();
-        let py = gil.python();
-        let increment = direction.signum();
-        if increment == 0 || condition_func.is_none(py) {return Ok(None);} // case of invalid arguments
-
-        while self.current_doc_extend.0!=0 && self.current_doc_extend.1!=0
+        let res= Python::with_gil(|py| -> PyResult<Option<LogEntryCore>>
         {
-            let entry_option =self.current_entry().unwrap();
-            match  entry_option
+            let increment = direction.signum();
+            if increment == 0 || condition_func.is_none(py) {return Ok(None);} // case of invalid arguments
+
+            while self.current_doc_extend.0!=0 && self.current_doc_extend.1!=0
             {
-                None => return Ok(None),
-                Some(entry) =>
+                let entry_option =self.current_entry().unwrap();
+                match  entry_option
                 {
-                        let entry_pytuple = PyTuple::new(py, &[entry.clone().into_py(py)]);
-                        let cond_result : bool= condition_func.call1(py,entry_pytuple)?.extract(py)?;
-                        if cond_result == true
-                        {
-                            return Ok(Some(entry));
+                    None => return Ok(None),
+                    Some(entry) =>
+                    {
+                            let entry_pytuple = PyTuple::new(py, &[entry.clone().into_py(py)]);
+                            let cond_result : bool= condition_func.call1(py,entry_pytuple)?.extract(py)?;
+                            if cond_result == true
+                            {
+                                return Ok(Some(entry));
+                            }
                         }
-                    }
+
+                }
 
             }
+            Ok(None)
+        });
 
-        }
-
-        Ok(None)
+        res
     
 
 
@@ -272,92 +277,94 @@ impl LogManager
     /// 
     /// grab entries in both directions starting from the current one for which condition_func(entry) is True and returns them as a Vec.
     pub fn slice_conditional(&mut self, up :u32, down : u32,
-         condition_func : PyObject) -> PyResult<Vec<LogEntry>>
+         condition_func : PyObject) -> PyResult<Vec<LogEntryCore>>
     {
 
-        let gil = Python::acquire_gil();
-        let py = gil.python();
-
-        let start_xten = self.current_doc_extend;
-        let mut up_slice = Vec::<LogEntry>::new();
-        for _i in 0..up
+        let res= Python::with_gil(|py| -> PyResult<Vec<LogEntryCore>>
         {
-            let _ = self.move_doc(-1);
-            let entry_option =self.current_entry().unwrap();
-            match  entry_option
+            let start_xten = self.current_doc_extend;
+            let mut up_slice = Vec::<LogEntryCore>::new();
+            for _i in 0..up
             {
-                None => (),
-                Some(entry) =>
+                let _ = self.move_doc(-1);
+                let entry_option =self.current_entry().unwrap();
+                match  entry_option
                 {
-                    if condition_func.is_none(py) == false
+                    None => (),
+                    Some(entry) =>
                     {
-                        
-                        let entry_pytuple = PyTuple::new(py, &[entry.clone().into_py(py)]);
-                        let cond_result : bool= condition_func.call1(py,entry_pytuple)?.extract(py)?;
-                        if cond_result == true
+                        if condition_func.is_none(py) == false
+                        {
+                            
+                            let entry_pytuple = PyTuple::new(py, &[entry.clone().into_py(py)]);
+                            let cond_result : bool= condition_func.call1(py,entry_pytuple)?.extract(py)?;
+                            if cond_result == true
+                            {
+                                up_slice.push(entry.clone());
+                            }
+                        }
+
+                        else
                         {
                             up_slice.push(entry.clone());
                         }
-                    }
 
-                    else
-                    {
-                        up_slice.push(entry.clone());
-                    }
-
-                    if self.current_doc_extend.0 == 0 //stop iterating if first document reached
-                    {
-                        break;
+                        if self.current_doc_extend.0 == 0 //stop iterating if first document reached
+                        {
+                            break;
+                        }
                     }
                 }
+                
             }
-            
-        }
 
-        self.set_xten(start_xten); //back to initial
+        
+            self.set_xten(start_xten); //back to initial
 
-        let mut down_slice = Vec::<LogEntry>::new();
+            let mut down_slice = Vec::<LogEntryCore>::new();
 
-        for _i in 0..down
-        {
-            //put current doc in the down part of the slice by only moving after first pass
-            if _i >0{ let _ =self.move_doc(1); }
-            let entry_option =self.current_entry().unwrap();
-            match  entry_option
+            for _i in 0..down
             {
-                None => (),
-                Some(entry) =>
+                //put current doc in the down part of the slice by only moving after first pass
+                if _i >0{ let _ =self.move_doc(1); }
+                let entry_option =self.current_entry().unwrap();
+                match  entry_option
                 {
-                    if condition_func.is_none(py) == false
+                    None => (),
+                    Some(entry) =>
                     {
-                    let entry_pytuple = PyTuple::new(py, &[(entry).clone().into_py(py)]);
-                        let cond_result : bool= condition_func.call1(py,entry_pytuple)?.extract(py)?;
-                        if cond_result == true
+                        if condition_func.is_none(py) == false
+                        {
+                        let entry_pytuple = PyTuple::new(py, &[(entry).clone().into_py(py)]);
+                            let cond_result : bool= condition_func.call1(py,entry_pytuple)?.extract(py)?;
+                            if cond_result == true
+                            {
+                                down_slice.push(entry.clone());
+                            }
+                        }
+
+                        else
                         {
                             down_slice.push(entry.clone());
                         }
-                    }
-
-                    else
-                    {
-                        down_slice.push(entry.clone());
-                    }
 
 
-                    //after last document reached, move() will set current extension to (last_byte,0).
-                    //in this case we remove the last entry and stop iteration
-                    if self.current_doc_extend.1 ==0 
-                    {
-                        let _ = down_slice.pop(); 
-                        break;
+                        //after last document reached, move() will set current extension to (last_byte,0).
+                        //in this case we remove the last entry and stop iteration
+                        if self.current_doc_extend.1 ==0 
+                        {
+                            let _ = down_slice.pop(); 
+                            break;
+                        }
                     }
                 }
             }
-        }
 
-        self.set_xten(start_xten);
+            self.set_xten(start_xten);
 
-        Ok([up_slice,down_slice].concat() )
+            Ok([up_slice,down_slice].concat() )
+    });
+    res as PyResult<Vec<LogEntryCore>>
 
     }
 
@@ -391,62 +398,66 @@ impl LogManager
     /// 
     /// get documents between two dates according to condition. Puts cursor back in initial position.
     /// NOTA : based on search_date function, does not return the closest entry to either date but the first with date <= to it
-    pub fn date_interval(&mut self, date1 : PyObject , date2 : PyObject , cond_func : PyObject) -> PyResult<Vec<LogEntry>>
+    pub fn date_interval(&mut self, date1 : PyObject , date2 : PyObject , cond_func : PyObject) -> PyResult<Vec<LogEntryCore>>
         {
 
-        let gil = Python::acquire_gil();
-        let py = gil.python();
-
-        let  d1_str = date1.to_string();
-        let  d2_str = date2.to_string();
-
-        let second_date : String;
-
-
-        let initial_doc_xten = self.current_doc_extend;
-        if d1_str < d2_str //move to oldest document, store latest date as stop conditoin
+        let res= Python::with_gil(|py| -> PyResult<Vec<LogEntryCore>>
         {
-            let _ = self.search_date(date1);
-            second_date = d2_str;
-        }   
-        else
-        {
-            let _ = self.search_date(date2);
-            second_date = d1_str;
-        }
+
+            let  d1_str = date1.to_string();
+            let  d2_str = date2.to_string();
+
+            let second_date : String;
 
 
-        let mut res_vec = Vec::<LogEntry>::with_capacity(16);
-        //go down the file and push every entry until second date reached or EoF
-        while self.current_doc_extend.1 !=0
-        {
-            let entry_option =self.current_entry().unwrap();
-            match  entry_option
+            let initial_doc_xten = self.current_doc_extend;
+            if d1_str < d2_str //move to oldest document, store latest date as stop conditoin
             {
-                None => (),
-                Some(entry) =>
-                {
-                    if cond_func.is_none(py) == false
-                    {
-                        let entry_pytuple = PyTuple::new(py, &[entry.clone().into_py(py)]);
-                        let peek_result : bool= cond_func.call1(py,entry_pytuple)?.extract(py)?;
-                        if peek_result == true { res_vec.push(entry.clone());}
-                    }
-                    else 
-                    {
-                        res_vec.push(entry.clone());            
-                    }
-                    let _= self.move_doc(1);
-        
-                    if self.peek().unwrap().0 > second_date {break;}
-                }
+                let _ = self.search_date(date1);
+                second_date = d2_str;
+            }   
+            else
+            {
+                let _ = self.search_date(date2);
+                second_date = d1_str;
             }
+
+
+            let mut res_vec = Vec::<LogEntryCore>::with_capacity(16);
+            //go down the file and push every entry until second date reached or EoF
+            while self.current_doc_extend.1 !=0
+            {
+                let entry_option =self.current_entry().unwrap();
+                match  entry_option
+                {
+                    None => (),
+                    Some(entry) =>
+                    {
+                        if cond_func.is_none(py) == false
+                        {
+                            let entry_pytuple = PyTuple::new(py, &[entry.clone().into_py(py)]);
+                            let peek_result : bool= cond_func.call1(py,entry_pytuple)?.extract(py)?;
+                            if peek_result == true { res_vec.push(entry.clone());}
+                        }
+                        else 
+                        {
+                            res_vec.push(entry.clone());            
+                        }
+                        let _= self.move_doc(1);
             
-        }
+                        if self.peek().unwrap().0 > second_date {break;}
+                    }
+                }
+                
+            }
 
 
-        self.set_xten(initial_doc_xten);
-        Ok(res_vec)
+            self.set_xten(initial_doc_xten);
+            Ok(res_vec)
+        });
+
+        res
+
 
     }
 
@@ -465,11 +476,11 @@ impl LogManager
     /// current_entry
     /// --
     /// 
-    /// build LogEntry out of current document
-    pub fn current_entry(&mut self) ->PyResult<Option<LogEntry> >
+    /// build LogEntryCore out of current document
+    pub fn current_entry(&mut self) ->PyResult<Option<LogEntryCore> >
     {
         if self.current_doc_extend.1 ==0 { Ok(None) }
-        else { Ok(LogEntry::get_entry(self)) }
+        else { Ok(LogEntryCore::get_entry(self)) }
         
     } 
 
@@ -477,8 +488,8 @@ impl LogManager
     ///get_content(entry,/)
     /// --
     /// 
-    /// get optional fields of a LogEntry as a string. YAML deserialization should be handled python-side to allow more genericity.
-    pub fn get_content(&mut self, entry : &LogEntry) -> PyResult<String>
+    /// get optional fields of a LogEntryCore as a string. YAML deserialization should be handled python-side to allow more genericity.
+    pub fn get_content(&mut self, entry : &LogEntryCore) -> PyResult<String>
     {
         if entry.dic_extension.1==0
         {
@@ -490,7 +501,7 @@ impl LogManager
         let _ = self.reader.seek(SeekFrom::Start(entry.dic_extension.0));
         let _= self.reader.read(&mut result);
 
-        if result.ends_with(&[b'\n',b'-',b'-',b'-',b'\n']) {result.resize(result.len()-5,b'\0');} //extension covers the end of document line in YAML, remove it for deserialization
+        if result.ends_with(&SPLIT_DELIMITER_BYTES_ENDL) {result.resize(result.len()-5,b'\0');} //extension covers the end of document line in YAML, remove it for deserialization
 
         self.set_xten(start_xten);
         Ok(String::from_utf8_lossy(&result).to_string())
@@ -561,25 +572,27 @@ impl LogManager //Rust funcs
 #[pymodule]
 fn orea_core(_py:Python, m :&PyModule) -> PyResult<()>
 {
-    m.add_class::<LogEntry>()?;
+    m.add_class::<LogEntryCore>()?;
     m.add_class::<LogManager>()?;
     Ok(())
 }
 
 #[test]
-fn test_fun()
+fn test_fn()
+{
+    pyo3::prepare_freethreaded_python();
+    let _= Python::with_gil(|_py| -> PyResult<()> 
     {
-        let gil = Python::acquire_gil();
-        let py = gil.python();
-
-        let mut Lm = LogManager::new_from_path("/home/guillaume/repos/Orea/tests/moby.yaml");
-        let s = Lm.slice_conditional(4, 0, py.None()).unwrap();
-        
-        for entry in s
-        {
-            let s = Lm.get_content(&entry).unwrap();
-            println!("{} {} {} {}",entry.date,entry.level,entry.message,s);
-        }
-        
-    }
+    let mut Lm = LogManager::new_from_path("/home/guillaume/repos/Orea/tests/moby/moby0.yaml");
+    let _ = Lm.move_doc(-2);
+    let ent = Lm.current_entry().unwrap().unwrap();
+    println!("{} {:?} {}",ent.message,ent.dic_extension,Lm.get_content(&ent).unwrap());
+    let _ = Lm.move_doc(-1);
+    let _ = Lm.move_doc(1);
+    
+    let ent = Lm.current_entry().unwrap().unwrap();
+    println!("{} {:?} {}",ent.message,ent.dic_extension,Lm.get_content(&ent).unwrap());
+    Ok(())
+    });
+}
 

@@ -18,6 +18,8 @@ class LogLevels(Enum) : #classic log levels for most applications
     DEBUG = 4
     TRACE = 5
 
+
+
 class LogManagerWrapper :
     """wrapper on LogManager rust struct providing convenience functions and type conversions to Rust compatible types."""
     def __init__(self,fpath, deque_max_len = 25):
@@ -31,31 +33,50 @@ class LogManagerWrapper :
 
         self.queue = deque(maxlen=deque_max_len)
         self.cursor_date = None #will stay None if empty file
-        self.lock = Lock()
+        self.write_lock = Lock()
+        self.read_lock = Lock() #deserialization
 
-        last_entry = self._logmanager.current_entry()
+        last_entry = self.current_entry()
         if last_entry is not None :
             self.queue.append(last_entry)
             self.cursor_date = datetime.fromisoformat(last_entry.date)
 
+
     #slice_up/slice_down c
-    def slice_up(self,n, header_cond_function = None, content_cond_function = None) :
+    def _scroll_up(self,n, header_cond_function = None, content_cond_function = None) :
         """collect documents from the current one going up in the bound file (previous entries) and appends them in the deque, optionally filtering them using a header and content
     #filtering function. moves the cursor up the file"""
 
-        interval = self._logmanager.slice_conditional(n,0,header_cond_function)
+        if len(self.queue) !=0 : #move current doc to oldest in queue
+            self._logmanager.current_doc_extend = self.queue[0].total_extension
+        interval = [LogEntry(self,e) for e in self._logmanager.slice_conditional(n,0,header_cond_function)]
         if content_cond_function is not None :
-            interval = [entry for entry in interval if content_cond_function(self,entry)==True]
+            interval = [e for e in interval if content_cond_function(e)==True ]
         self.queue.extendleft(interval)
+        if len(self.queue) !=0 : #move current doc to oldest in queue
+            self._logmanager.current_doc_extend = self.queue[0].total_extension
 
-    def slice_down(self, n, header_cond_function = None, content_cond_function = None) :
-        """same as slice_up in opposite directoin"""
+    def _scroll_down(self, n, header_cond_function = None, content_cond_function = None) :
+        """same as slice_up in opposite direction"""
 
-        interval = self._logmanager.slice_conditional(0,n,header_cond_function)
-        if content_cond_function is not None :
-            interval = [entry for entry in interval if content_cond_function(self,entry)==True]
+        if len(self.queue) !=0:
+            self._logmanager.current_doc_extend = self.queue[-1].total_extension
+        self._logmanager.search_date(self.queue[-1].date)
+        interval = [LogEntry(self,e) for e in self._logmanager.slice_conditional(0,n, header_cond_function)][1:]
+        if content_cond_function is not None:
+            interval = [e for e in interval if content_cond_function(e) == True]
         self.queue.extend(interval)
+        if len(self.queue) !=0:
+            self._logmanager.current_doc_extend = self.queue[-1].total_extension
 
+    def scroll(self, n, header_cond_function = None, content_cond_function = None) :
+
+        if n == 0:
+            return
+        elif n > 0 :
+            self._scroll_down(n, header_cond_function, content_cond_function)
+        else :
+            self._scroll_up(-n, header_cond_function, content_cond_function)
 
 
     def crawl_until(self,direction : int,header_cond_function = None, content_cond_function = None):
@@ -70,12 +91,14 @@ class LogManagerWrapper :
 
             self.move(increment)
             entry = self.current_entry()
+
             if entry is None : #either end of file, return None as stop condition for filling function
                 return None
 
+
             stop_condition = True
             if content_cond_function is not None:
-                stop_condition = stop_condition and content_cond_function(self,entry)
+                stop_condition = stop_condition and content_cond_function(entry)
             if header_cond_function is not None :
                 stop_condition = stop_condition and header_cond_function(entry)
 
@@ -95,10 +118,10 @@ class LogManagerWrapper :
         if header_cond_function is None and content_cond_function is None :
             if direction <0 :
                 self.queue.clear()
-                self.slice_up(space_left)
+                self._scroll_up(space_left)
             else :
                 self.queue.clear()
-                self.slice_down(space_left)
+                self._scroll_down(space_left)
 
         else :
             while space_left !=0 :
@@ -115,7 +138,7 @@ class LogManagerWrapper :
 
 
     def search_date(self,date):
-        """returns the entry with the specified date or the first one older than that. date should be a datetime object or an ISO date string """
+        """moves to the entry with the specified date or the first one older than that. date should be a datetime object or an ISO date string """
         if isinstance(date,datetime):
             self._logmanager.search_date(str(date))
         else :
@@ -131,14 +154,14 @@ class LogManagerWrapper :
             return
 
         self._logmanager.move_doc(amount)
-        if self._logmanager.current_entry() is not None :
-            self.cursor_date = datetime.fromisoformat(self._logmanager.current_entry().date)
+        if self.current_entry() is not None :
+            self.cursor_date = datetime.fromisoformat(self.current_entry().date)
         else :
             if self._logmanager.file_byte_len()>0 and amount > 0 :
                 self.jump_last()
             return None
 
-    def get_content(self,entry : orea_core.LogEntry) -> dict :
+    def get_content(self,entry : orea_core.LogEntryCore) -> dict :
         return yaml.load(self._logmanager.get_content(entry),yaml.Loader)
 
     def date_interval(self,d1 :datetime.date ,d2 : datetime.date, cond_func = None):
@@ -152,15 +175,12 @@ class LogManagerWrapper :
             return [entry for entry in all_slice if cond_func(self,entry)==True]
 
     def current_entry(self):
+        core_ent = self._logmanager.current_entry()
+        return LogEntry(self,core_ent) if core_ent is not None else None
+
+    def current_core_entry(self):
         return self._logmanager.current_entry()
 
-    def full_current_entry(self):
-        entry = self._logmanager.current_entry()
-        if entry.dic_extension[1] == 0 :
-            return entry,None
-        else :
-            D = yaml.load(self._logmanager.get_content(entry),yaml.Loader)
-            return entry,D
 
     def jump_first(self):
         self._logmanager.jump_first()
@@ -173,19 +193,57 @@ class LogManagerWrapper :
 
         date = datetime.now()
         _level = level.value if isinstance(level, Enum) else level
-        if not serialize_dict : #print message directly without yaml dumping, saves a bit of performance
-            self.file.seek(os.SEEK_END)
-            self.file.write("date: {}\nlevel: {}\ntopic: {}\nmessage: {}\n---\n".format(date,_level,topic,message))
-            self.file.flush()
-            return
 
 
-        with self.lock:
+
+        with self.write_lock:
+            if not serialize_dict:  # print message directly without yaml dumping, saves a bit of performance
+                self.file.seek(os.SEEK_END)
+                self.file.write(
+                    "date: {}\nlevel: {}\ntopic: {}\nmessage: {}\n---\n".format(date, _level, topic, message))
+                self.file.flush()
+                return
 
             content_dict = {"date":date,"level":_level,"topic":topic,"message":message}
             content_dict.update(serialize_dict)
             content_str = yaml.dump(content_dict, sort_keys=False, allow_unicode=True)+'---\n'
-            self.file.seek(os.SEEK_END)
             self.file.write(content_str)
             self.file.flush()
 
+
+class LogEntry :
+    """wrapper around LogEntryCore to allow more ergonomic deserialization by keeping references to LogManagerWrapper objects"""
+
+    def __init__(self,log_man:LogManagerWrapper,entry : orea_core.LogEntryCore):
+        self.log_man_ref = log_man
+        self.entry = entry
+
+    def __getattr__(self, item):
+        if item in ["date","level","message","topic","dic_extension","total_extension"]:
+            return getattr(self.entry,item)
+        elif item == "log_man_ref" :
+            return self.log_man_ref
+        elif item == "entry" :
+            return self.entry
+        else :
+            raise KeyError(f" 'Logentry' object has no attribute {item}")
+
+    def __repr__(self):
+        return self.entry.__repr__()
+    def deserialize(self):
+        """use deserialization function of LogManager for ergonomics"""
+        if self.dic_extension[1] == 0:
+            return None
+        else:
+            try :
+                self.log_man_ref.read_lock.acquire()
+                core_ent = self.entry
+                dic =self.log_man_ref.get_content(core_ent)
+                return dic
+            finally :
+                self.log_man_ref.read_lock.release()
+
+    def __lt__(self, other):
+        return self.date<other.date if other.date is not None else False
+    def __gt__(self, other):
+        return self.date>other.date if other.date is not None else True

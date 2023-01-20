@@ -8,11 +8,8 @@ use pyo3::exceptions::PySyntaxError;
 use crate::LogManager;
 
 // static strings corresponding to first mandatory field names in YAML docs
-static DOC_FIELD_DATE: &str = "date: ";
-static DOC_FIELD_TOPIC: &str = "topic: ";
 
-static CLASSIC_LOG_LEVELS : &'static [&'static str]= &["FATAL","ERROR","WARN","INFO","DEBUG","TRACE"];
-
+use crate::globals::{DOC_DELIMITER,CLASSIC_LOG_LEVELS,DOC_FIELD_DATE,DOC_FIELD_TOPIC, SPLIT_DELIMITER_BYTES};
 
 #[pyclass]
 pub struct YAMLReader
@@ -141,19 +138,19 @@ impl YAMLReader
             assumes the current position is before the next document's delimiter*/
     pub fn previous_document_extension(&mut self) -> (u64, u64)
     {
-        let delimiter = vec![b'-',b'-',b'-',b'\n'];
-        if self.peek_nbytes(4).eq(&delimiter)==false { self.move_previous_line();}
+        
+        if self.peek_nbytes(4).eq(&SPLIT_DELIMITER_BYTES)==false { self.move_previous_line();}
         let lower_pos = self.stream_position().unwrap();
         let mut upper_pos = lower_pos;
 
         let mut prev_line_peek = vec![b'0'];
-        while upper_pos!=0 && prev_line_peek.is_empty()==false && prev_line_peek.eq(&delimiter) ==false
+        while upper_pos!=0 && prev_line_peek.is_empty()==false && prev_line_peek.eq(&SPLIT_DELIMITER_BYTES) ==false
         {
             self.move_previous_line();
             prev_line_peek = self.peek_nbytes(4);
             upper_pos = self.stream_position().unwrap();
         }
-        if prev_line_peek.eq(&delimiter) ==true
+        if prev_line_peek.eq(&SPLIT_DELIMITER_BYTES) ==true
         {
             let mut _x = String::new();
             let _x =self.read_line(&mut _x);
@@ -172,14 +169,15 @@ impl YAMLReader
         let _x =self.read_line(&mut next_line);
         let mut lower_pos = self.stream_position().unwrap();
 
-        while next_line.is_empty()==false && next_line.starts_with("---")==false
+        while next_line.is_empty()==false && next_line.starts_with(DOC_DELIMITER)==false
         {
             next_line.clear();
             let _x =self.read_line(&mut next_line);
             lower_pos = self.stream_position().unwrap();
         }
-        
-        (upper_pos,lower_pos-upper_pos)
+        let mut true_lowest = lower_pos-upper_pos;
+        if true_lowest > 4 {true_lowest -=4;}
+        (upper_pos,true_lowest)
 
     }
 
@@ -192,7 +190,7 @@ impl YAMLReader
 #[pyclass]
 #[derive(Clone)]
 #[allow(dead_code)] //POD struct for python, unread here
-pub struct LogEntry //represents a log entry with accessible usual fields and the byte location of optional data
+pub struct LogEntryCore //represents a log entry with accessible usual fields and the byte location of optional data
 {
     #[pyo3(get)]
     pub date : String,
@@ -209,7 +207,7 @@ pub struct LogEntry //represents a log entry with accessible usual fields and th
 }
 
 #[pymethods]
-impl LogEntry
+impl LogEntryCore
 {
     fn __repr__(&mut self)-> PyResult<String> //quick representation for console
     {
@@ -227,12 +225,11 @@ impl LogEntry
         Ok(rep)
     }
     
-    fn is_equal(&self, other : &LogEntry) ->bool
+    fn is_equal(&self, other : &LogEntryCore) ->bool
     {
         self.date == other.date 
             && self.level == other.level
             && self.topic == other.topic
-            && self.total_extension == other.total_extension
             && self.message == other.message
     }
 
@@ -240,16 +237,16 @@ impl LogEntry
         match op {
             CompareOp::Eq => Ok(self.is_equal(other)),
             CompareOp::Ne => Ok(!self.is_equal(other)),
-            _=> Err(PyErr::new::<PySyntaxError, _>("only == and != operators are implemented for LogEntry."))
+            _=> Err(PyErr::new::<PySyntaxError, _>("only == and != operators are implemented for LogEntryCore."))
         }
     }
 
 }
 
-impl LogEntry
+impl LogEntryCore
 {   
 
-    pub fn get_entry(lm : &mut LogManager) ->Option<LogEntry> //build entry struct from current document the logmanager points to
+    pub fn get_entry(lm : &mut LogManager) ->Option<LogEntryCore> //build entry struct from current document the logmanager points to
     {
         let xten = lm.current_doc_extend;
 
@@ -259,7 +256,7 @@ impl LogEntry
         let mut str_mes = String::new();
 
         let _ = lm.reader.read_line(&mut str_date);
-        if str_date.starts_with("---") 
+        if str_date.starts_with(DOC_DELIMITER) 
         {
             str_date.clear();
             let _= lm.reader.read_line(&mut str_date);
@@ -294,11 +291,12 @@ impl LogEntry
         let pos = lm.reader.stream_position().unwrap();
         let mut dic_xten : u64  =0;
         if xten.0+xten.1 > pos {dic_xten = xten.0+xten.1-pos;}
-        
+
+
         //set cursor back to start
         lm.set_xten(xten);
 
-        Some(LogEntry
+        Some(LogEntryCore
          {
             date:str_date,
             level :n_lev,

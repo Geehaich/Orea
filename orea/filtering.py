@@ -1,5 +1,6 @@
 from . import orea_core as oc
 from enum import Enum
+from .loglib import LogEntry
 
 """we aim to provide basic filtering of entries based on common fields such as date, level or message but
 because of the genericity offered by the YAML format, filtering entries based on content can't be fully covered by stock functions
@@ -19,24 +20,10 @@ class BoolOps(Enum):
 
 
 """below are basic function generators creating functions compatible with header filtering"""
-def message_contains(substring = None) :
-    def message_contains_f(entry : oc.LogEntry) -> bool :
-        return substring in entry.message if substring else True
-    return message_contains_f
 
-def topic_contains(substring = None) :
-    def topic_contains_f(entry : oc.LogEntry) -> bool :
-        return substring in entry.topic if substring else True
-    return topic_contains_f
-
-def has_data() :
-    def has_data_f(entry:oc.LogEntry) -> bool :
-        return entry.dic_extension[1] > 0
-
-    return has_data_f
 def level_filter(level,op = BoolOps.LESS_OR_EQUAL) :
 
-    def level_filter_f(entry : oc.LogEntry) -> bool :
+    def level_filter_f(entry : oc.LogEntryCore) -> bool :
         if op == BoolOps.EQUAL :
             return entry.level==level
         if op == BoolOps.LESS_OR_EQUAL :
@@ -52,7 +39,7 @@ def level_filter(level,op = BoolOps.LESS_OR_EQUAL) :
 
 def default_header_func(level=6,op = BoolOps.LESS_OR_EQUAL,sub_message="",sub_topic="",data_presence=None) : #function accounting for all header fields
 
-    def def_com_f(entry:oc.LogEntry) -> bool :
+    def def_com_f(entry:oc.LogEntryCore) -> bool :
         total_bool = level_filter(level, op)(entry) and sub_topic in entry.topic and sub_message in entry.message
         if data_presence is not None :
             total_bool = total_bool and (entry.dic_extension[1] != 0) == data_presence
@@ -67,11 +54,11 @@ result, and doing a check on the actual content (here, a ndarray).
 
 def full_deser_example(trace_min) :
 
-    def example_f(logmanwrap : LogManagerWrapper, entry : oc.LogEntry) -> bool :
+    def example_f( entry :LogEntry) -> bool :
         
         if entry.dic_extension[1] == 0 :
             return False
-        d = logmanwrap.get_content(entry) #deserialize
+        d = entry.deserialize() #deserialize
         if d!= None and "MAT" in d.keys() :
             return numpy.trace(d["MAT"]) > 1
         else :
