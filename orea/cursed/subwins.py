@@ -14,6 +14,7 @@ def date_select(win : CMainWindow) -> str :
 
     char = 0
     win.screen.move(win.windims[0] - 1, 0)
+    win.screen.clrtoeol()
     date_head = "pick date : "
     win.screen.addstr(date_head)
     while True :
@@ -74,3 +75,5 @@ def get_str_bottom_line(win:CMainWindow, askinput : str) -> str :
     win.screen.clrtoeol()
 
     return res
+
+

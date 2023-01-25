@@ -37,10 +37,12 @@ def level_filter(level,op = BoolOps.LESS_OR_EQUAL) :
 
     return level_filter_f
 
-def default_header_func(level=6,op = BoolOps.LESS_OR_EQUAL,sub_message="",sub_topic="",data_presence=None) : #function accounting for all header fields
+def default_header_func(level=6,op = BoolOps.LESS_OR_EQUAL,sub_topic="",sub_message="",data_presence=None) : #function accounting for all header fields
 
-    def def_com_f(entry:oc.LogEntryCore) -> bool :
-        total_bool = level_filter(level, op)(entry) and sub_topic in entry.topic and sub_message in entry.message
+    def def_com_f(entry) -> bool :
+        if entry is None :
+            return False
+        total_bool = level_filter(level, op)(entry) and (sub_topic in entry.topic) and (sub_message in entry.message)
         if data_presence is not None :
             total_bool = total_bool and (entry.dic_extension[1] != 0) == data_presence
         return total_bool

@@ -22,7 +22,7 @@ class LogLevels(Enum) : #classic log levels for most applications
 
 class LogManagerWrapper :
     """wrapper on LogManager rust struct providing convenience functions and type conversions to Rust compatible types."""
-    def __init__(self,fpath, deque_max_len = 25):
+    def __init__(self,fpath, deque_max_len = 20):
 
         fpath = os.path.abspath(fpath)
         if not os.path.exists(fpath):
@@ -47,27 +47,18 @@ class LogManagerWrapper :
         """collect documents from the current one going up in the bound file (previous entries) and appends them in the deque, optionally filtering them using a header and content
     #filtering function. moves the cursor up the file"""
 
-        if len(self.queue) !=0 : #move current doc to oldest in queue
+        if len(self.queue)!=0 and self.queue[0] is not None:
             self._logmanager.current_doc_extend = self.queue[0].total_extension
-        interval = [LogEntry(self,e) for e in self._logmanager.slice_conditional(n,0,header_cond_function)]
-        if content_cond_function is not None :
-            interval = [e for e in interval if content_cond_function(e)==True ]
-        self.queue.extendleft(interval)
-        if len(self.queue) !=0 : #move current doc to oldest in queue
-            self._logmanager.current_doc_extend = self.queue[0].total_extension
+        for i in range(n) :
+            self.crawl_until(-1,header_cond_function,content_cond_function)
 
     def _scroll_down(self, n, header_cond_function = None, content_cond_function = None) :
         """same as slice_up in opposite direction"""
 
-        if len(self.queue) !=0:
+        if len(self.queue)!=0 and self.queue[-1] is not None:
             self._logmanager.current_doc_extend = self.queue[-1].total_extension
-        self._logmanager.search_date(self.queue[-1].date)
-        interval = [LogEntry(self,e) for e in self._logmanager.slice_conditional(0,n, header_cond_function)][1:]
-        if content_cond_function is not None:
-            interval = [e for e in interval if content_cond_function(e) == True]
-        self.queue.extend(interval)
-        if len(self.queue) !=0:
-            self._logmanager.current_doc_extend = self.queue[-1].total_extension
+        for i in range(n):
+            self.crawl_until(1, header_cond_function, content_cond_function)
 
     def scroll(self, n, header_cond_function = None, content_cond_function = None) :
 
@@ -83,8 +74,22 @@ class LogManagerWrapper :
         """moves along the file until an entry meets search criteria, stores it in the queue"""
 
         if header_cond_function is None and content_cond_function is None :
-            raise ValueError("both filtering functions set to None.")
+            if direction < 0 :
+                self.move(-1)
+                ent = self.current_entry()
+                if ent is not None :
+                    if len(self.queue)!=0 and self.queue[0] is not None :
 
+                        if not ent.total_extension[0]==self.queue[0].total_extension[0]==0 :
+                            self.queue.appendleft(ent)
+            elif direction > 0 :
+                self.move(1)
+                ent = self.current_entry()
+                if ent is not None:
+                    if len(self.queue) != 0 and  self.queue[-1] is not None :
+                        if not ent.total_extension[0]==self.queue[-1].total_extension[0]==0 :
+                            self.queue.appendleft(ent)
+            return
         increment = -1 if direction <0 else 1
         entry = None
         while True :
@@ -118,12 +123,26 @@ class LogManagerWrapper :
         if header_cond_function is None and content_cond_function is None :
             if direction <0 :
                 self.queue.clear()
+                self.queue.append(self.current_entry())
                 self._scroll_up(space_left)
             else :
                 self.queue.clear()
+                self.queue.append(self.current_entry())
                 self._scroll_down(space_left)
 
         else :
+
+            self.queue.clear()
+            cur_ent = self.current_entry()
+            if cur_ent is not None :
+                current_fits = True
+                if header_cond_function is not None :
+                    current_fits = current_fits and header_cond_function(cur_ent.entry)
+                if content_cond_function is not None :
+                    current_fits = current_fits and content_cond_function(cur_ent)
+                if current_fits :
+                    self.queue.append(cur_ent)
+
             while space_left !=0 :
 
                 res = self.crawl_until(direction,header_cond_function,content_cond_function)
@@ -151,17 +170,18 @@ class LogManagerWrapper :
         """
 
         if amount == 0 :
-            return
+            return None
 
         self._logmanager.move_doc(amount)
         if self.current_entry() is not None :
             self.cursor_date = datetime.fromisoformat(self.current_entry().date)
         else :
             if self._logmanager.file_byte_len()>0 and amount > 0 :
-                self.jump_last()
+                self.jump_last(refill=False)
             return None
 
     def get_content(self,entry : orea_core.LogEntryCore) -> dict :
+        text =self._logmanager.get_content(entry).replace("---\n",'')
         return yaml.load(self._logmanager.get_content(entry),yaml.Loader)
 
     def date_interval(self,d1 :datetime.date ,d2 : datetime.date, cond_func = None):
@@ -182,11 +202,22 @@ class LogManagerWrapper :
         return self._logmanager.current_entry()
 
 
-    def jump_first(self):
+    def jump_first(self,refill = True):
         self._logmanager.jump_first()
+        if refill:
+            self.queue.clear()
+            self.queue.append(self.current_entry())
+            self.fill_queue(1)
 
-    def jump_last(self):
+
+    def jump_last(self,refill=True):
         self._logmanager.jump_last()
+        self._logmanager.move_doc(1)
+        if refill:
+
+            self.queue.clear()
+            self.queue.append(self.current_entry())
+            self.fill_queue(-1)
 
     def new_entry(self,message ="", level=0, topic = "", serialize_dict = None) :
         """add new entry to the file the manager object is connected to. uses lock files for eventual multiprocess access"""
@@ -217,6 +248,7 @@ class LogEntry :
     def __init__(self,log_man:LogManagerWrapper,entry : orea_core.LogEntryCore):
         self.log_man_ref = log_man
         self.entry = entry
+        self.extra = {} #store content in case of deserialization to avoid loading it several times
 
     def __getattr__(self, item):
         if item in ["date","level","message","topic","dic_extension","total_extension"]:
@@ -231,19 +263,24 @@ class LogEntry :
     def __repr__(self):
         return self.entry.__repr__()
     def deserialize(self):
-        """use deserialization function of LogManager for ergonomics"""
+        """use deserialization function of LogManager. stores the result in the object to avoid loading it several times"""
         if self.dic_extension[1] == 0:
             return None
         else:
-            try :
-                self.log_man_ref.read_lock.acquire()
-                core_ent = self.entry
-                dic =self.log_man_ref.get_content(core_ent)
-                return dic
-            finally :
-                self.log_man_ref.read_lock.release()
+
+            if self.extra :
+                return self.extra
+            else :
+
+                try :
+                    self.log_man_ref.read_lock.acquire()
+                    core_ent = self.entry
+                    self.extra =self.log_man_ref.get_content(core_ent)
+                    return self.extra
+                finally :
+                    self.log_man_ref.read_lock.release()
 
     def __lt__(self, other):
-        return self.date<other.date if other.date is not None else False
+        return self.date<other.date if other is not None else False
     def __gt__(self, other):
-        return self.date>other.date if other.date is not None else True
+        return self.date>other.date if other is not None else True
