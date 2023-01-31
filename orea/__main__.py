@@ -1,17 +1,29 @@
 import sys, os
 import curses
 import inotify.adapters
+import threading
 from .logcontroller import  LogController
-from . import orea_core
+from .cursed.mainwin import CMainWindow
 
-def on_notify_func(controller) :
+from numpy.random import randint
 
-    i = inotify.adapters.Inotify(controller.log_mans.keys())
-    for event in i.event_gen(yield_nones=False):
-      (_, type_names, path, filename) = event
-      if "IN_MODIFY" in type_names :
-        controller.print_until_last(path+'/'+filename)
+def on_notify_func(window) :
+    i = inotify.adapters.Inotify(window.controller.log_mans.keys())
+    for event in i.event_gen(yield_nones=True):
+        if window.end_notify_thread  :
+            return
+        if event is not None :
+            (_, type_names, path, filename) = event
+            if "IN_MODIFY" in type_names :
+                window.on_file_mod_event()
+                window.screen.refresh()
 
 if __name__=="__main__" :
     con = LogController(sys.argv[1:])
-    on_notify_func(con)
+    win = CMainWindow(con)
+    tkey = threading.Thread(target = win.key_bind_threadfunc)
+    tnot = threading.Thread(target= on_notify_func,args = [win])
+    tkey.start()
+    tnot.start()
+    tnot.join()
+

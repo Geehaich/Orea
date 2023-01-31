@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime,timedelta
 from enum import Enum
 
 import yaml
@@ -18,7 +18,7 @@ class LogLevels(Enum) : #classic log levels for most applications
     DEBUG = 4
     TRACE = 5
 
-
+DEFAULT_CRAWL_TIMEOUT = timedelta(seconds = 180)
 
 class LogManagerWrapper :
     """wrapper on LogManager rust struct providing convenience functions and type conversions to Rust compatible types."""
@@ -36,41 +36,59 @@ class LogManagerWrapper :
         self.write_lock = Lock()
         self.read_lock = Lock() #deserialization
 
+        self.pause= False
+
         last_entry = self.current_entry()
         if last_entry is not None :
             self.queue.append(last_entry)
             self.cursor_date = datetime.fromisoformat(last_entry.date)
 
 
+        self.search_timeout = DEFAULT_CRAWL_TIMEOUT
+
+
     #slice_up/slice_down c
-    def _scroll_up(self,n, header_cond_function = None, content_cond_function = None) :
+    def _scroll_up(self,n, header_cond_function = None, content_cond_function = None,inf_scroll = False) :
         """collect documents from the current one going up in the bound file (previous entries) and appends them in the deque, optionally filtering them using a header and content
     #filtering function. moves the cursor up the file"""
-
+        result = 0
         if len(self.queue)!=0 and self.queue[0] is not None:
-            self._logmanager.current_doc_extend = self.queue[0].total_extension
+            self._logmanager.byte_jump( self.queue[0].total_extension[0] + self.queue[0].total_extension[1]//2) #set cursor position to earliest entry
         for i in range(n) :
-            self.crawl_until(-1,header_cond_function,content_cond_function)
+            result = self.crawl_until(-1,header_cond_function,content_cond_function,inf_scroll)
+        return result
 
-    def _scroll_down(self, n, header_cond_function = None, content_cond_function = None) :
+    def _scroll_down(self, n, header_cond_function = None, content_cond_function = None,inf_scroll = False) :
         """same as slice_up in opposite direction"""
-
+        result = 0
         if len(self.queue)!=0 and self.queue[-1] is not None:
-            self._logmanager.current_doc_extend = self.queue[-1].total_extension
+            self._logmanager.byte_jump(self.queue[-1].total_extension[0] + self.queue[-1].total_extension[1] // 2)  # set cursor position to latest entry
         for i in range(n):
-            self.crawl_until(1, header_cond_function, content_cond_function)
-
-    def scroll(self, n, header_cond_function = None, content_cond_function = None) :
+            result = self.crawl_until(1, header_cond_function, content_cond_function,inf_scroll)
+        return result
+    def scroll(self, n, header_cond_function = None, content_cond_function = None , inf_scroll = False) :
 
         if n == 0:
-            return
+            return None
         elif n > 0 :
-            self._scroll_down(n, header_cond_function, content_cond_function)
+            counter = 0
+            scroll_res = 0
+            while counter < n and scroll_res is not None :
+                counter+=1
+                scroll_res = self._scroll_down(1, header_cond_function, content_cond_function,inf_scroll)
+            if scroll_res is None :
+                return None
         else :
-            self._scroll_up(-n, header_cond_function, content_cond_function)
+            counter = 0
+            scroll_res = 0
+            while counter < -n and scroll_res is not None :
+                counter+=1
+                scroll_res = self._scroll_up(1, header_cond_function, content_cond_function,inf_scroll)
+            if scroll_res is None :
+                return None
 
 
-    def crawl_until(self,direction : int,header_cond_function = None, content_cond_function = None):
+    def crawl_until(self,direction : int, header_cond_function = None, content_cond_function = None, inf_scroll = False):
         """moves along the file until an entry meets search criteria, stores it in the queue"""
 
         if header_cond_function is None and content_cond_function is None :
@@ -82,19 +100,31 @@ class LogManagerWrapper :
 
                         if not ent.total_extension[0]==self.queue[0].total_extension[0]==0 :
                             self.queue.appendleft(ent)
+                else :
+                    return None
             elif direction > 0 :
                 self.move(1)
                 ent = self.current_entry()
                 if ent is not None:
                     if len(self.queue) != 0 and  self.queue[-1] is not None :
-                        if not ent.total_extension[0]==self.queue[-1].total_extension[0]==0 :
-                            self.queue.appendleft(ent)
-            return
+                        if not ent.total_extension[0]==self.queue[-1].total_extension[0]:
+                            self.queue.append(ent)
+                else :
+                    return None
+            return 0
+
         increment = -1 if direction <0 else 1
-        entry = None
+
+        if (inf_scroll == False) and (self.nothing_down_close and increment == 1) or (self.nothing_up_close and increment ==-1) :
+            return
+
+        entry = self.current_entry()
+        cur_date = self.current_entry().date_obj()
+        moved = 0
         while True :
 
             self.move(increment)
+            moved +=1
             entry = self.current_entry()
 
             if entry is None : #either end of file, return None as stop condition for filling function
@@ -107,13 +137,32 @@ class LogManagerWrapper :
             if header_cond_function is not None :
                 stop_condition = stop_condition and header_cond_function(entry)
 
-            if stop_condition :
+            if inf_scroll == False and abs(entry.date_obj() - cur_date) > self.search_timeout :
+                if increment == 1:
+                    self.nothing_down_close = True
+                else :
+                    self.nothing_up_close = True
+                return -1
+
+
+            extremal_condition = entry.total_extension[0]==0 or self.isateof()
+                     #check if document is at either end of file
+
+            if stop_condition : #condition met, add to queue
                 break
+
+            if extremal_condition : #end of file reached and condition not met, leave
+                return None
+
         if increment  == -1 and entry is not None:
-            self.queue.appendleft(entry)
+            if len(self.queue)==0 or (len(self.queue)!=0 and entry.total_extension[0]!=self.queue[0].total_extension[0]):
+                self.queue.appendleft(entry)
+                self.nothing_down_close = False #allows going back to previous entries
         if increment == 1 and entry is not None:
-            self.queue.append(entry)
-        return 0 #return something other than None
+            if len(self.queue)==0 or entry.total_extension[0]!=self.queue[-1].total_extension[0]:
+                self.queue.append(entry)
+                self.nothing_up_close = False
+        return moved
 
     def fill_queue(self,direction = -1, header_cond_function = None, content_cond_function = None):
         """fill entry queue in either direction using optional filtering functions"""
@@ -152,12 +201,23 @@ class LogManagerWrapper :
                     space_left -= 1
 
 
+    def position_percent(self):
+
+        return self._logmanager.current_doc_extend[0]/self._logmanager.file_byte_len()
+
+    def isateof(self):
+        """compare current doc extension to file size to check if the cursor is at the end of the file"""
+        return self._logmanager.file_byte_len() - (self._logmanager.current_doc_extend[0]+self._logmanager.current_doc_extend[1]) < 10
 
 
 
 
     def search_date(self,date):
         """moves to the entry with the specified date or the first one older than that. date should be a datetime object or an ISO date string """
+
+        self.nothing_up_close = False
+        self.nothing_down_close = False
+
         if isinstance(date,datetime):
             self._logmanager.search_date(str(date))
         else :
@@ -175,7 +235,7 @@ class LogManagerWrapper :
         self._logmanager.move_doc(amount)
         if self.current_entry() is not None :
             self.cursor_date = datetime.fromisoformat(self.current_entry().date)
-        else :
+        else : #case of empty file
             if self._logmanager.file_byte_len()>0 and amount > 0 :
                 self.jump_last(refill=False)
             return None
@@ -202,22 +262,36 @@ class LogManagerWrapper :
         return self._logmanager.current_entry()
 
 
-    def jump_first(self,refill = True):
+    def jump_first(self,refill = True,header_cond_function = None, content_cond_function = None):
+
+        self.nothing_up_close = False
+        self.nothing_down_close = False
+
         self._logmanager.jump_first()
-        if refill:
-            self.queue.clear()
-            self.queue.append(self.current_entry())
-            self.fill_queue(1)
+        first_ent = self.current_entry()
+        if len(self.queue)!=0 and first_ent == self.queue[0]:
+            return
+        else :
+            if refill :
+                self.fill_queue(1,header_cond_function,content_cond_function)
+            return len(self.queue)
+        return 0
 
 
-    def jump_last(self,refill=True):
+    def jump_last(self,refill=True,header_cond_function = None, content_cond_function = None):
+
+        self.nothing_up_close = False
+        self.nothing_down_close = False
+
         self._logmanager.jump_last()
-        self._logmanager.move_doc(1)
-        if refill:
-
-            self.queue.clear()
-            self.queue.append(self.current_entry())
-            self.fill_queue(-1)
+        last_ent = self.current_entry()
+        if len(self.queue)!=0 and last_ent == self.queue[-1]:
+            return
+        else:
+            if refill:
+                self.fill_queue(-1, header_cond_function, content_cond_function)
+            return len(self.queue)
+        return 0
 
     def new_entry(self,message ="", level=0, topic = "", serialize_dict = None) :
         """add new entry to the file the manager object is connected to. uses lock files for eventual multiprocess access"""
@@ -279,6 +353,8 @@ class LogEntry :
                     return self.extra
                 finally :
                     self.log_man_ref.read_lock.release()
+    def date_obj(self):
+        return datetime.fromisoformat(self.entry.date)
 
     def __lt__(self, other):
         return self.date<other.date if other is not None else False

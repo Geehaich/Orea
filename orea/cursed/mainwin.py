@@ -5,13 +5,13 @@ import curses
 from curses import wrapper
 from textwrap import TextWrapper
 from orea.logcontroller import LogController
-
-import subwins
+from orea.cursed.subwins import timewindow_select,date_select,get_str_bottom_line, help_win
+from threading import Lock
 
 DATE_FOREGROUND = curses.COLOR_GREEN|curses.A_BOLD
 OPTIONAL_DATA_FOREGROUND = curses.COLOR_BLUE|curses.A_DIM
 MIN_COLUMNS = 80
-PAD_HEIGHT = 200
+PAD_HEIGHT = 1024
 LAST_LINE_OFFSET = 3
 MIN_LINES = 35
 HEADER_WIDTH = 39 # all lines start with a fixed header incating data presence, date and level, e.g : +DATA | YY-MM-DD hh:mm:ss.mmm | FATAL |
@@ -68,7 +68,6 @@ class CMainWindow :
         CP.init_color_pairs()
         self.screen.keypad(True)
         curses.noecho()
-        #self.controller = LogController(paths)
         self.wrapper = TextWrapper(subsequent_indent="\t",width=self.windims[1])
         self.wrapper.initial_indent = HEADER_WIDTH * " "
 
@@ -78,8 +77,12 @@ class CMainWindow :
         elif type(pathlist_or_logcon) == list :
             self.controller = LogController(pathlist_or_logcon)
 
+        self.paused = False
+        self.new_ents = 0
 
+        self.thread_lock = Lock()
 
+        self.end_notify_thread = False
 
         self._highest_line = PAD_HEIGHT-LAST_LINE_OFFSET #lowest y value with actual text printed
         self._cur_scroll_index = PAD_HEIGHT-LAST_LINE_OFFSET- self.windims[0] #lowest y value on screen (top line)
@@ -87,22 +90,22 @@ class CMainWindow :
         self.cur_disp_func = self.output_entry_short
         self.refresh_entries()
         self.statusprint()
-        cur_key = self.screen.getch()
-        while cur_key != ord("q") :
-            self.key_bindings(cur_key)
 
-            cur_key = self.screen.getch()
+
+
+    def __del__(self):
 
         curses.nocbreak()
-
         self.screen.keypad(False)
         curses.echo()
         curses.endwin()
 
     def key_bindings(self,char):
 
+
         self.pad.clear()
         if char == curses.KEY_RESIZE :
+            self.screen.clear()
             self.windims = self.screen.getmaxyx()
             self.screen.resize(*self.windims)
             self.pad.resize(PAD_HEIGHT, self.windims[1])
@@ -111,22 +114,30 @@ class CMainWindow :
                 curses.resizeterm(10,60)
 
         elif char== curses.KEY_UP :
+            self.pause()
             self.controller.scroll(-1)
+
         elif char== curses.KEY_DOWN :
+            self.pause()
+            self.new_ents = 0 
             self.controller.scroll(1)
 
         elif char== 337: #SHIFT + KEY_UP
+            self.pause()
             self.controller.scroll(-5)
-            return
         elif char== 336 : #SHIFT + KEY_DOWN
+            self.pause()
             self.controller.scroll(5)
-            return
-
         elif char ==  curses.KEY_PPAGE :
             self.window_scroll(-5)
         elif char == curses.KEY_NPAGE:
             self.window_scroll(5)
 
+        elif char == ord(' '):
+            if self.paused :
+                self.unpause()
+            else :
+                self.pause()
 
 
         elif char == curses.KEY_LEFT :
@@ -141,36 +152,48 @@ class CMainWindow :
                 self.controller.update_filter()
 
         elif char == ord("d") :
-            date_str = subwins.date_select(self)
-            self.controller.search_date(date_str)
+            self.pause()
+            self.controller.search_date(date_select(self))
 
-        elif char == ord("F") :
+        elif char == 4 : #CTRL+d
+            self.controller.set_timeout(timewindow_select(self))
+
+        elif char == curses.KEY_HOME :
+            self.pause()
             self.controller.jump_first()
-        elif char == ord("L"):
+        elif char == curses.KEY_END:
             self.controller.jump_last()
 
-        elif char == ord("T"):
-            substring = subwins.get_str_bottom_line(self,"search topic (* for all)")
+        elif char == 20 : #CTRL+t
+            substring = get_str_bottom_line(self,"search topic (* for all): ", self.controller.topic_substring)
             if substring == "*" :
                 self.controller.topic_substring = ""
-            elif substring != "" :
-                self.controller.topic_substring = substring
                 self.controller.update_filter()
+            else :
+                if substring not in ["",self.controller.topic_substring] :
+                    self.controller.topic_substring = substring
+                    self.controller.update_filter()
 
-        elif char == ord("M"):
-            self.controller.jump_last()
+        elif char == 6 : #CTRL+f
+            substring = get_str_bottom_line(self,"search message (* for all): ",self.controller.message_substring)
+            if substring == "*" :
+                self.controller.message_substring = ""
+                self.controller.update_filter()
+            else:
+                if substring not in ["",self.controller.message_substring]:
+                    self.controller.message_substring = substring
+                    self.controller.update_filter()
+
+        elif char == ord("h") :
+            help_win(self)
 
         elif char == ord('+'):
             self.change_display_mode()
-        else :
-            pass
-            # self.screen.move(0,0)
-            # self.screen.addch(char)
+
 
         self.refresh_entries()
         self.statusprint()
-
-
+        self.screen.refresh()
     def output_head(self,entry ,show_data=True):
         """write first fields of an entry using appropriate colors."""
         position = self.pad.getyx()
@@ -260,7 +283,7 @@ class CMainWindow :
 
     def refresh_entries(self):
 
-        #self.pad.clear()
+        self.pad.clear()
         if self.cur_disp_func == self.output_entry_short:
             self.pad.move(PAD_HEIGHT-LAST_LINE_OFFSET-3,0)
         else :
@@ -268,7 +291,6 @@ class CMainWindow :
         high = PAD_HEIGHT-LAST_LINE_OFFSET
         if self.controller.contents_changed :
             self.controller.collect_entries()
-            self.screen.addstr(self.windims[0]-1,0,str(len(self.controller.sorted_entries)))
         for entry in self.controller.sorted_entries :
             high = self.cur_disp_func(entry)
             if high == 0 :
@@ -282,6 +304,7 @@ class CMainWindow :
         else :
             self._cur_scroll_index = max(self._cur_scroll_index,self._highest_line)
 
+        self.pad.refresh(self._cur_scroll_index,0,0,0,self.windims[0]-LAST_LINE_OFFSET,self.windims[1])
         self.pad.refresh(self._cur_scroll_index,0,0,0,self.windims[0]-LAST_LINE_OFFSET,self.windims[1])
 
     def window_scroll(self,amount):
@@ -307,10 +330,68 @@ class CMainWindow :
             else:
                 self.screen.addstr("FULL",curses.color_pair(0)|curses.A_REVERSE)
 
-            self.screen.addstr("    EST. ENTRIES : ",CP.LEVEL_INFO)
-            self.screen.addstr(str(self.controller.est_total_entries))
+            self.screen.addstr("    EST. POS : ",CP.LEVEL_INFO)
+            mp = self.controller.mean_position()
+            if mp<10 :
+                self.screen.addch(" ")
+            self.screen.addstr(str(mp)+"%  ")
+
+            if self.paused :
+                self.screen.addstr("||",curses.color_pair(0)|curses.A_REVERSE)
+                self.screen.addstr("  ")
+                if self.new_ents !=0 :
+                    self.screen.addstr(str(self.new_ents) + "new")
+
+            l_up,l_down = self.controller.is_search_zone_limit()
+            if self.paused and (l_up or l_down ):
+                self.screen.addstr("  SRCH TMOUT")
+
+
+
         except : #window probably too short. function not that important, can afford ignoring exceptions
             pass
+
+    def key_bind_threadfunc(self):
+        """wrap keyboard interaction in a single function to call it inside threads"""
+
+        cur_key = 0
+        while cur_key != ord("q"):
+            self.thread_lock.acquire()
+            try:
+                self.key_bindings(cur_key)
+            finally:
+                self.thread_lock.release()
+                cur_key = self.screen.getch()
+
+        self.end_notify_thread = True
+
+
+    def pause(self):
+        if not self.paused :
+
+            self.paused = True
+            self.new_ents = 0
+
+    def unpause(self):
+        if  self.paused :
+            self.paused = False
+            self.new_ents = 0
+            self.controller.jump_last()
+
+    def on_file_mod_event(self):
+        if self.paused == False:
+            while not self.controller.all_eof() and self.paused == False:
+                self.thread_lock.acquire()
+                self.controller.scroll(1,inf_scroll=True)
+                self.controller.collect_entries()
+                self.refresh_entries()
+                self.statusprint()
+                self.thread_lock.release()
+        else :
+            self.thread_lock.acquire()
+            self.new_ents +=1
+            self.statusprint()
+            self.thread_lock.release()
 
 
 
@@ -321,13 +402,3 @@ class CMainWindow :
             return
         else :
             self.cur_disp_func = self.output_entry_short
-
-if __name__=="__main__":
-
-    Lc = LogController(["../tests/moby/moby1.yaml","../tests/moby/moby2.yaml"])
-    Lm1 = Lc.log_mans[list(Lc.log_mans.keys())[0]]#,Lc.log_mans[list(Lc.log_mans.keys())[1]]
-    Lc.topic_substring = "1"
-    Lc.update_filter()
-
-
-    curses.wrapper(lambda x : CMainWindow(Lc))
