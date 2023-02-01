@@ -4,7 +4,7 @@ import curses.textpad
 
 
 def date_select(win ) -> str :
-
+    """quick widget allowing the user to select a date and time and returning it as an ISO date string"""
     init_date = win.controller.sorted_entries[0].date
 
     time_array = [int(init_date[0:4]), int(init_date[5:7]), int(init_date[8:10]),int(init_date[11:13]),
@@ -62,7 +62,7 @@ def date_select(win ) -> str :
         char = win.screen.getch()
 
 def timewindow_select(win ) -> str :
-
+    """asks the user for an interval for search timeouts"""
     curses.curs_set(0)
 
     days, mins,secs = win.controller.search_timeout.days, win.controller.search_timeout.seconds //60 , win.controller.search_timeout.seconds %60
@@ -110,7 +110,7 @@ def timewindow_select(win ) -> str :
 
         char = win.screen.getch()
 def get_str_bottom_line(win, askinput : str,init ="") -> str :
-
+    """input field at the last line of the window"""
     win.screen.move(win.windims[0]-1,0)
     win.screen.addstr(askinput)
     x = win.screen.getyx()[1]
@@ -127,6 +127,7 @@ def get_str_bottom_line(win, askinput : str,init ="") -> str :
 
 
 def help_win(win) :
+    """print a formatted reminder of the window's controls"""
     try :
         win.screen.clear()
         win.screen.addstr(1,13,"---HELP---",curses.color_pair(0)|curses.A_BOLD|curses.A_REVERSE)
@@ -145,12 +146,12 @@ def help_win(win) :
         win.screen.addstr(9,3,"SPACE ", curses.color_pair(0) | curses.A_BOLD)
         win.screen.addstr("pause. resuming also goes to latest entries",curses.color_pair(0) | curses.A_DIM)
         win.screen.addstr(10,3,"PG.UP / PG.DOWN ", curses.color_pair(0) | curses.A_BOLD)
-        win.screen.addstr("scroll window if content buffer contains more lines than terminal")
+        win.screen.addstr("scroll window if content buffer contains more lines than terminal",curses.color_pair(0) | curses.A_DIM)
         win.screen.addstr(11,3,"+ ", curses.color_pair(0) | curses.A_BOLD)
         win.screen.addstr("switch between visualisation modes (FULL takes more resources to deserialize entries)",curses.color_pair(0) | curses.A_DIM)
         win.screen.addstr(12, 3, "q ", curses.color_pair(0) | curses.A_BOLD)
         win.screen.addstr("quit program",curses.color_pair(0) | curses.A_DIM)
-        win.screen.addstr(15,2,"press SPACE to quit",curses.color_pair(0) | curses.A_REVERSE)
+        win.screen.addstr(15,2,"press SPACE to return",curses.color_pair(0) | curses.A_REVERSE)
         win.screen.refresh()
         while win.screen.getch() != ord(" ") :
             continue

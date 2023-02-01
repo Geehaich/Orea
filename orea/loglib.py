@@ -23,7 +23,10 @@ DEFAULT_CRAWL_TIMEOUT = timedelta(seconds = 180)
 class LogManagerWrapper :
     """wrapper on LogManager rust struct providing convenience functions and type conversions to Rust compatible types."""
     def __init__(self,fpath, deque_max_len = 20):
+        """ctor, initializes a LogManager object and a deque for entries.
 
+        :param str fpath : tracked .yaml file
+        :param int deque_max_len : size of the entry deque. default 20"""
         fpath = os.path.abspath(fpath)
         if not os.path.exists(fpath):
             open(fpath, 'w+').close()
@@ -50,7 +53,11 @@ class LogManagerWrapper :
     #slice_up/slice_down c
     def _scroll_up(self,n, header_cond_function = None, content_cond_function = None,inf_scroll = False) :
         """collect documents from the current one going up in the bound file (previous entries) and appends them in the deque, optionally filtering them using a header and content
-    #filtering function. moves the cursor up the file"""
+    #filtering function. moves the cursor up the file.
+
+    :param func header_cond_function : filtering function with an access to every LogEntryField except the deserialized content
+    :param func content_cond_function : filtering function also accounting for deserialized content
+    :param bool inf_scroll : ignore search timeout. default : False"""
         result = 0
         if len(self.queue)!=0 and self.queue[0] is not None:
             self._logmanager.byte_jump( self.queue[0].total_extension[0] + self.queue[0].total_extension[1]//2) #set cursor position to earliest entry
@@ -59,7 +66,7 @@ class LogManagerWrapper :
         return result
 
     def _scroll_down(self, n, header_cond_function = None, content_cond_function = None,inf_scroll = False) :
-        """same as slice_up in opposite direction"""
+        """same as scroll_up in opposite direction"""
         result = 0
         if len(self.queue)!=0 and self.queue[-1] is not None:
             self._logmanager.byte_jump(self.queue[-1].total_extension[0] + self.queue[-1].total_extension[1] // 2)  # set cursor position to latest entry
@@ -67,7 +74,9 @@ class LogManagerWrapper :
             result = self.crawl_until(1, header_cond_function, content_cond_function,inf_scroll)
         return result
     def scroll(self, n, header_cond_function = None, content_cond_function = None , inf_scroll = False) :
+        """calls scroll_up and scroll_down multiple time to move along the document.
 
+        :param int n : amount of valid entries we go over."""
         if n == 0:
             return None
         elif n > 0 :
@@ -202,7 +211,7 @@ class LogManagerWrapper :
 
 
     def position_percent(self):
-
+        """returns the percentage of the current byte position to the total file length. """
         return self._logmanager.current_doc_extend[0]/self._logmanager.file_byte_len()
 
     def isateof(self):
@@ -241,6 +250,7 @@ class LogManagerWrapper :
             return None
 
     def get_content(self,entry : orea_core.LogEntryCore) -> dict :
+        """get optional content from a LogEntryObject as a dict. You should favor using the deserialize method of a LogEntry to get contents, it will call this one on itself."""
         text =self._logmanager.get_content(entry).replace("---\n",'')
         return yaml.load(self._logmanager.get_content(entry),yaml.Loader)
 
@@ -255,15 +265,20 @@ class LogManagerWrapper :
             return [entry for entry in all_slice if cond_func(self,entry)==True]
 
     def current_entry(self):
+        """return the LogEntry the file cursor is currently pointing to"""
         core_ent = self._logmanager.current_entry()
         return LogEntry(self,core_ent) if core_ent is not None else None
 
     def current_core_entry(self):
+        """return the LogEntryCore the file cursor is currently pointing to"""
         return self._logmanager.current_entry()
 
 
     def jump_first(self,refill = True,header_cond_function = None, content_cond_function = None):
-
+        """move to beginning of file.
+        :param bool refill : if True, reset the entry deque
+        :param header_cond_function : header filter function used if refilling
+        :param content_cond_function :content filter"""
         self.nothing_up_close = False
         self.nothing_down_close = False
 
@@ -279,6 +294,7 @@ class LogManagerWrapper :
 
 
     def jump_last(self,refill=True,header_cond_function = None, content_cond_function = None):
+        """Move to EoF, optional refill of deque"""
 
         self.nothing_up_close = False
         self.nothing_down_close = False
@@ -294,7 +310,12 @@ class LogManagerWrapper :
         return 0
 
     def new_entry(self,message ="", level=0, topic = "", serialize_dict = None) :
-        """add new entry to the file the manager object is connected to. uses lock files for eventual multiprocess access"""
+        """add new entry to the file the manager object is connected to.
+
+        :param str message : entry message
+        :param int level : entry log level. should be between 0-99
+        :param str topic : entry topic, used for filtering later
+        :param serialize_dict : oprional dictionary serialized as YAML and appended to the file along with the rest"""
 
         date = datetime.now()
         _level = level.value if isinstance(level, Enum) else level
@@ -317,7 +338,12 @@ class LogManagerWrapper :
 
 
 class LogEntry :
-    """wrapper around LogEntryCore to allow more ergonomic deserialization by keeping references to LogManagerWrapper objects"""
+    """
+    wrapper around LogEntryCore to allow more ergonomic deserialization by keeping references to LogManagerWrapper objects
+
+    :ivar log_man_ref: reference to the LogManagerWrapper which created the file
+    :ivar entry: LogEntryCore defined in the rust API containing header info and byte extension
+    :ivar extra: stores extra content after the function was called to avoid multiple costly deserializations"""
 
     def __init__(self,log_man:LogManagerWrapper,entry : orea_core.LogEntryCore):
         self.log_man_ref = log_man
@@ -354,6 +380,7 @@ class LogEntry :
                 finally :
                     self.log_man_ref.read_lock.release()
     def date_obj(self):
+        """return date as a datetime object to allow for actual date arithmetics instead of boolean comparison the ISO string format allows"""
         return datetime.fromisoformat(self.entry.date)
 
     def __lt__(self, other):

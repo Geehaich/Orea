@@ -14,12 +14,24 @@ class LogController :
     """controller class for interfacing. will store multiple LogManagerWrapper objects to track several files and handle events."""
     tribool = [True,False,None]
     def __init__(self,tracked_files : [str] , deque_size = 20):
+        """ctor creating LogManagerWrapper objects linked to each file, regrouping them in a dict, and setting default
+        filter parameters.
+
+        :param [str] tracked_files : a list of paths pointing to .yaml file paths. The files will be created if they don't exist but their folder does.
+        :param int deque_size : size of each LogManagerWrapper's entries deque. defaults to 20
+        :ivar log_mans: dict regrouping individual logmanagers
+        :ivar is_paused : paused status
+        :ivar topic_substring : substring to search in topics for filtering entries
+        :ivar message_substring : substring to search in topics for filtering entries
+        :ivar filter : entry filtering function
+        :ivar search_timeout : timedelta object used as search timeout on all tracked wrappers
+        :ivar est_total_entries : vague estimate of the total amount of entries in all files
+        :ivar sorted_entries : a list used to aggregate entries and sort them by date for display
+        :ivar contents_changed : flag indicating sorted_entries need to be rebuilt
+        """
 
         self.log_mans = {os.path.abspath(file): LogManagerWrapper(file,deque_max_len=deque_size) for file in tracked_files}
         self.is_paused = False
-        self.is_fulltext = False
-
-        self.max_msg_size = 50
 
         self.max_level = 5
         self.topic_substring = ""
@@ -41,10 +53,9 @@ class LogController :
         self.contents_changed = False #used to tell the UI to collect entries before printing them
         self.collect_entries()
 
-        self.new_entries = 0 #keep track of new entries added while paused
 
     def update_filter(self):
-
+        """create a new header filtering function using parameters currently stored in the controller, raises content flag"""
         self.filter =  default_header_func(self.max_level,BoolOps.LESS_OR_EQUAL,self.topic_substring,
                                       self.message_substring,LogController.tribool[self.data_presence_idx])
         self.contents_changed = True
@@ -54,7 +65,7 @@ class LogController :
 
 
             logman = self.log_mans[mankey]
-            logman.nothing_up_close = False
+            logman.nothing_up_close = False #reset search timeouts
             logman.nothing_down_close = False
             if len(logman.queue)!=0 :
                 logman._logmanager.byte_jump(logman.queue[-1].total_extension[0] + logman.queue[-1].total_extension[1]//2)
@@ -63,7 +74,7 @@ class LogController :
 
 
     def collect_entries(self):
-        """gather every currently stored entry and """
+        """gather every currently stored entry into a list sorted by date."""
         aggregated_entries = []
         self.sorted_entries.clear()
         for logman in self.log_mans :
@@ -79,7 +90,10 @@ class LogController :
 
 
     def scroll(self,amount,inf_scroll=False):
-        """scroll along entries by moving along every tracked file, checking the dates, and only moving the relevant logmanagers"""
+        """scroll along entries by moving along every tracked file, checking the dates, and only moving the relevant logmanagers
+
+        :param int amount : the amount of times we'll attempt to scroll. goes to earlier entries if <0, later otherwise
+        :param bool inf_scroll : whether to ignore search timeout. used by UI live mode while going down the file."""
 
         if amount == 0 :
             return
@@ -94,6 +108,9 @@ class LogController :
         self.contents_changed = True
 
     def _scroll_down_once(self,inf_scroll):
+        """scroll every logmanager once, check the earliest new entry, and scroll the logmanagers not containing it back up
+
+        :param bool inf_scroll : ignore search timeout"""
 
         moved_log_mans = {}
         for logman in self.log_mans:
@@ -115,7 +132,7 @@ class LogController :
 
 
     def _scroll_up_once(self,inf_scroll):
-
+        """same as scroll_down_once but in the other direction"""
         moved_log_mans = {}
         for logman in self.log_mans :
             if len(self.log_mans[logman].queue)!=0 and self.log_mans[logman].queue[0].total_extension[0]!=0 :
@@ -145,6 +162,7 @@ class LogController :
 
 
     def jump_last(self):
+        """jump to EoF for every tracked file"""
         total = 0
         for logman in self.log_mans:
             total += self.log_mans[logman].jump_last(header_cond_function=self.filter,refill=True)  # jump first returns 0 if we were already at beginning
@@ -152,7 +170,11 @@ class LogController :
             self.contents_changed = True
         self.contents_changed = True
     def search_date(self,date,refill=True):
-        """search a specific date in every logmanager"""
+        """set the cursor for every LogmanagerWrapper to the first entry with a date <= the date parameter.
+
+        :param date|str date : a datetime or ISO date string representing the target date.
+        :param bool refill : refill every tracked deque"""
+
         for logman in self.log_mans:
             self.log_mans[logman].search_date(date)
             if refill :
@@ -192,18 +214,6 @@ class LogController :
             if not self.log_mans[man].isateof():
                 return False
         return True
-
-
-    def print_plaintext(self,fpath):
-    
-        fpath = os.path.abspath(fpath)
-        self.log_mans[fpath].jump_last()
-        entry = self.log_mans[fpath].current_entry()
-        
-        if entry is not None and self.filter(entry) ==True  :
-            if self.last_entry_printed is None or self.last_entry_printed != entry:
-                print(entry)
-                self.last_entry_printed = entry
 
     def est_total(self):
         """randomly sample a few entries per logmanager for size, compare to file length and estimate a number of entries for all tracked files"""

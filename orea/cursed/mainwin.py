@@ -20,6 +20,7 @@ HEADER_WIDTH = 39 # all lines start with a fixed header incating data presence, 
 from numpy.random import randint
 
 class CP:
+    """Class used to initiate a few color pairs and formats, and keep references to them"""
     ERR =  LEVEL_FATAL =None
     LEVEL_ERROR  =None
     LEVEL_WARN  =None
@@ -58,10 +59,10 @@ class CP:
 class CMainWindow :
     """a main application window based on curses"""
     def __init__(self, pathlist_or_logcon):
+        """initializes the CLI, links to preexisting LogController or creates one.
 
+        :param pathlist_or_logcon : list of filepaths or LogControllerObject"""
         self.screen = curses.initscr()
-        self.windims = self.screen.getmaxyx()
-        self.screen.resize(max(self.windims[0],30), max(self.windims[1],65))
         self.windims = self.screen.getmaxyx()
         self.pad = curses.newpad(PAD_HEIGHT,self.windims[1])
         curses.start_color()
@@ -101,7 +102,9 @@ class CMainWindow :
         curses.endwin()
 
     def key_bindings(self,char):
+        """dispatch function for input characters.
 
+        :param int char : character returned by a getch() call"""
 
         self.pad.clear()
         if char == curses.KEY_RESIZE :
@@ -119,7 +122,7 @@ class CMainWindow :
 
         elif char== curses.KEY_DOWN :
             self.pause()
-            self.new_ents = 0 
+            self.new_ents = 0
             self.controller.scroll(1)
 
         elif char== 337: #SHIFT + KEY_UP
@@ -184,7 +187,7 @@ class CMainWindow :
                     self.controller.message_substring = substring
                     self.controller.update_filter()
 
-        elif char == ord("h") :
+        elif char == curses.KEY_F1 :
             help_win(self)
 
         elif char == ord('+'):
@@ -195,7 +198,7 @@ class CMainWindow :
         self.statusprint()
         self.screen.refresh()
     def output_head(self,entry ,show_data=True):
-        """write first fields of an entry using appropriate colors."""
+        """write first fields of an entry to the screen using appropriate colors."""
         position = self.pad.getyx()
         self.pad.move(position[0], 0)
         if entry.dic_extension[1] != 0 and show_data:
@@ -282,33 +285,38 @@ class CMainWindow :
         return y-len(wraparray)+1
 
     def refresh_entries(self):
+        """refresh screen with current list of entries using the currently selected output function"""
 
-        self.pad.clear()
-        if self.cur_disp_func == self.output_entry_short:
-            self.pad.move(PAD_HEIGHT-LAST_LINE_OFFSET-3,0)
-        else :
-            self.pad.move(PAD_HEIGHT - LAST_LINE_OFFSET - 2, 0)
-        high = PAD_HEIGHT-LAST_LINE_OFFSET
-        if self.controller.contents_changed :
-            self.controller.collect_entries()
-        for entry in self.controller.sorted_entries :
-            high = self.cur_disp_func(entry)
-            if high == 0 :
-                break
+        try :
+            self.pad.clear()
+            if self.cur_disp_func == self.output_entry_short:
+                self.pad.move(PAD_HEIGHT-LAST_LINE_OFFSET-3,0)
             else :
-                self.pad.move(high-1,0)
+                self.pad.move(PAD_HEIGHT - LAST_LINE_OFFSET - 2, 0)
+            high = PAD_HEIGHT-LAST_LINE_OFFSET
+            if self.controller.contents_changed :
+                self.controller.collect_entries()
+            for entry in self.controller.sorted_entries :
+                high = self.cur_disp_func(entry)
+                if high == 0 :
+                    break
+                else :
+                    self.pad.move(high-1,0)
 
-        self._highest_line = high
-        if self._highest_line >= PAD_HEIGHT-LAST_LINE_OFFSET- self.windims[0] :
-            self._cur_scroll_index = PAD_HEIGHT-LAST_LINE_OFFSET- self.windims[0]
-        else :
-            self._cur_scroll_index = max(self._cur_scroll_index,self._highest_line)
+            self._highest_line = high
+            if self._highest_line >= PAD_HEIGHT-LAST_LINE_OFFSET- self.windims[0] :
+                self._cur_scroll_index = PAD_HEIGHT-LAST_LINE_OFFSET- self.windims[0]
+            else :
+                self._cur_scroll_index = max(self._cur_scroll_index,self._highest_line)
 
-        self.pad.refresh(self._cur_scroll_index,0,0,0,self.windims[0]-LAST_LINE_OFFSET,self.windims[1])
-        self.pad.refresh(self._cur_scroll_index,0,0,0,self.windims[0]-LAST_LINE_OFFSET,self.windims[1])
+            self.pad.refresh(self._cur_scroll_index,0,0,0,self.windims[0]-LAST_LINE_OFFSET,self.windims[1])
+
+        except :
+            self.screen.clear()
+            self.screen.addstr(0,0,"printing entries failed, please resize window and press any key")
 
     def window_scroll(self,amount):
-
+        """scroll along window if the total list of entries takes more lines than displayed on screen"""
         self._cur_scroll_index += amount
         self._cur_scroll_index = max(self._cur_scroll_index,self._highest_line)
         self._cur_scroll_index = min(self._cur_scroll_index,PAD_HEIGHT-LAST_LINE_OFFSET-self.windims[0])
@@ -316,6 +324,7 @@ class CMainWindow :
         self.pad.refresh(self._cur_scroll_index-1, 0, 0, 0, self.windims[0] - LAST_LINE_OFFSET, self.windims[1])
 
     def statusprint(self):
+        """print relevant info such as current max level or pause status on the sedond last line of the screen."""
         try :
             self.screen.move(self.windims[0]-2,0)
             self.screen.clrtoeol()
@@ -379,6 +388,8 @@ class CMainWindow :
             self.controller.jump_last()
 
     def on_file_mod_event(self):
+        """function called when a file event is raised by Inotify. either scrolls until the last entries available (live)
+        or increments the new entry counter (paused)"""
         if self.paused == False:
             while not self.controller.all_eof() and self.paused == False:
                 self.thread_lock.acquire()
