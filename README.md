@@ -10,7 +10,7 @@ Orea is a logging library allowing you to append additional data to your entries
 
 ## How it works 
 
- ![YAML representation of entry](/home/guillaume/Images/yaml_example.png) 
+ ![YAML representation of entry](images/yaml_example.png) 
  
  entries are represented as above, in multidocument YAML files. Each has mandatory fields **(date, topic,message & level) ** making up an entry header, and anything past those is considered an optional payload.
  
@@ -59,10 +59,10 @@ log_manager.new_entry("message",3,"topic",{"foo":15,"bar": [1,2,3,["and",0.3]]} 
  
  
 ## CLI
- ![Screenshot of the CLI](/home/guillaume/repos/Orea/images/CLI.png) 
+ ![Screenshot of the CLI](images/CLI.png) 
  for basic applications, we also provide a command-line viewer. Launching the module as an application with a syntax such as `python -m orea foo/bar.yaml  foo/bar/baz/* ` will start a curses-based interface with basic filtering and scrolling capabilities, which also looks for file modification events to display new entries as the source files are updated.
  
- ![ ](/home/guillaume/repos/Orea/images/help.png  "The interface's commands, type F1 to display this window")
+ ![ ](images/help.png  "The interface's commands, type F1 to display this window")
  
  
  
