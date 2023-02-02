@@ -12,6 +12,7 @@ filtering of optional fields requiring serialization will require a signature of
     """
 
 class BoolOps(Enum):
+    """Enum for comparison modes"""
     EQUAL = 0,
     GREATER = 1,
     GREATER_OR_EQUAL = 2,
@@ -19,10 +20,9 @@ class BoolOps(Enum):
     LESS_OR_EQUAL = 4
 
 
-"""below are basic function generators creating functions compatible with header filtering"""
 
 def level_filter(level,op = BoolOps.LESS_OR_EQUAL) :
-
+    """function generator for level comparison"""
     def level_filter_f(entry : oc.LogEntryCore) -> bool :
         if op == BoolOps.EQUAL :
             return entry.level==level
@@ -38,7 +38,7 @@ def level_filter(level,op = BoolOps.LESS_OR_EQUAL) :
     return level_filter_f
 
 def default_header_func(level=6,op = BoolOps.LESS_OR_EQUAL,sub_topic="",sub_message="",data_presence=None) : #function accounting for all header fields
-
+    """a function generator building a default header filtering function filtering by max level, both text fields, and additional data presence"""
     def def_com_f(entry) -> bool :
         if entry is None :
             return False

@@ -17,7 +17,6 @@ MIN_LINES = 35
 HEADER_WIDTH = 39 # all lines start with a fixed header incating data presence, date and level, e.g : +DATA | YY-MM-DD hh:mm:ss.mmm | FATAL |
 
 
-from numpy.random import randint
 
 class CP:
     """Class used to initiate a few color pairs and formats, and keep references to them"""
@@ -57,11 +56,11 @@ class CP:
 
 
 class CMainWindow :
-    """a main application window based on curses"""
-    def __init__(self, pathlist_or_logcon):
-        """initializes the CLI, links to preexisting LogController or creates one.
 
-        :param pathlist_or_logcon : list of filepaths or LogControllerObject"""
+    def __init__(self, pathlist_or_logcon):
+        """a main application window based on curses
+        parameter :
+        pathlist_or_logcon : list of filepaths or LogControllerObject"""
         self.screen = curses.initscr()
         self.windims = self.screen.getmaxyx()
         self.pad = curses.newpad(PAD_HEIGHT,self.windims[1])
@@ -104,7 +103,9 @@ class CMainWindow :
     def key_bindings(self,char):
         """dispatch function for input characters.
 
-        :param int char : character returned by a getch() call"""
+        parameters :
+
+        int char : character returned by a getch() call"""
 
         self.pad.clear()
         if char == curses.KEY_RESIZE :

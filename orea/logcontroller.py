@@ -17,30 +17,27 @@ class LogController :
         """ctor creating LogManagerWrapper objects linked to each file, regrouping them in a dict, and setting default
         filter parameters.
 
-        :param [str] tracked_files : a list of paths pointing to .yaml file paths. The files will be created if they don't exist but their folder does.
-        :param int deque_size : size of each LogManagerWrapper's entries deque. defaults to 20
-        :ivar log_mans: dict regrouping individual logmanagers
-        :ivar is_paused : paused status
-        :ivar topic_substring : substring to search in topics for filtering entries
-        :ivar message_substring : substring to search in topics for filtering entries
-        :ivar filter : entry filtering function
-        :ivar search_timeout : timedelta object used as search timeout on all tracked wrappers
-        :ivar est_total_entries : vague estimate of the total amount of entries in all files
-        :ivar sorted_entries : a list used to aggregate entries and sort them by date for display
-        :ivar contents_changed : flag indicating sorted_entries need to be rebuilt
+        Parameters :
+
+        [str] tracked_files : a list of paths pointing to .yaml file paths. The files will be created if they don't exist but their folder does.
+        int deque_size : size of each LogManagerWrapper's entries deque. defaults to 20
         """
 
         self.log_mans = {os.path.abspath(file): LogManagerWrapper(file,deque_max_len=deque_size) for file in tracked_files}
-        self.is_paused = False
+        """dict regrouping individual logmanagers"""
 
         self.max_level = 5
         self.topic_substring = ""
+        """substring to search in topics during filtering"""
         self.message_substring = ""
+        """substring to search in message during filtering"""
         self.data_presence_idx = 2
         self.filter = None
+        """entry filtering function"""
         self.update_filter() #header filter
 
         self.search_timeout = timedelta(seconds = 180)
+        """timedelta object used as search timeout on all tracked wrappers"""
         self.set_timeout(self.search_timeout)
 
 
@@ -49,12 +46,14 @@ class LogController :
         for man in self.log_mans:
             self.log_mans[man].fill_queue(-1,self.filter)
 
-        self.sorted_entries = []  # aggregation of logmanager deques, sorted by date
-        self.contents_changed = False #used to tell the UI to collect entries before printing them
+        self.sorted_entries = []
+        """a list used to aggregate entries and sort them by date for display"""
+        self.contents_changed = False
+        """flag indicating sorted_entries need to be rebuilt"""
         self.collect_entries()
 
 
-    def update_filter(self):
+    def update_filter(self) -> None:
         """create a new header filtering function using parameters currently stored in the controller, raises content flag"""
         self.filter =  default_header_func(self.max_level,BoolOps.LESS_OR_EQUAL,self.topic_substring,
                                       self.message_substring,LogController.tribool[self.data_presence_idx])
@@ -74,7 +73,7 @@ class LogController :
 
 
     def collect_entries(self):
-        """gather every currently stored entry into a list sorted by date."""
+        """gather every currently stored entry into a list and sorts them by date."""
         aggregated_entries = []
         self.sorted_entries.clear()
         for logman in self.log_mans :
@@ -92,8 +91,9 @@ class LogController :
     def scroll(self,amount,inf_scroll=False):
         """scroll along entries by moving along every tracked file, checking the dates, and only moving the relevant logmanagers
 
-        :param int amount : the amount of times we'll attempt to scroll. goes to earlier entries if <0, later otherwise
-        :param bool inf_scroll : whether to ignore search timeout. used by UI live mode while going down the file."""
+        parameters :
+        int amount : the amount of times we'll attempt to scroll. goes to earlier entries if <0, later otherwise
+        bool inf_scroll : whether to ignore search timeout. used by UI live mode while going down the file."""
 
         if amount == 0 :
             return
@@ -110,7 +110,8 @@ class LogController :
     def _scroll_down_once(self,inf_scroll):
         """scroll every logmanager once, check the earliest new entry, and scroll the logmanagers not containing it back up
 
-        :param bool inf_scroll : ignore search timeout"""
+        parameters :
+        bool inf_scroll : ignore search timeout"""
 
         moved_log_mans = {}
         for logman in self.log_mans:
@@ -172,8 +173,9 @@ class LogController :
     def search_date(self,date,refill=True):
         """set the cursor for every LogmanagerWrapper to the first entry with a date <= the date parameter.
 
-        :param date|str date : a datetime or ISO date string representing the target date.
-        :param bool refill : refill every tracked deque"""
+        parameters :
+        date|str date : a datetime or ISO date string representing the target date.
+        bool refill : refill every tracked deque"""
 
         for logman in self.log_mans:
             self.log_mans[logman].search_date(date)

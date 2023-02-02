@@ -49,12 +49,13 @@ class LogLevels(Enum) : #classic log levels for most applications
 DEFAULT_CRAWL_TIMEOUT = timedelta(seconds = 180)
 
 class LogManagerWrapper :
-    &#34;&#34;&#34;wrapper on LogManager rust struct providing convenience functions and type conversions to Rust compatible types.&#34;&#34;&#34;
     def __init__(self,fpath, deque_max_len = 20):
-        &#34;&#34;&#34;ctor, initializes a LogManager object and a deque for entries.
+        &#34;&#34;&#34;wrapper on LogManager rust struct providing convenience functions and type conversions to Rust compatible types.
+        contains a deque of current entries and scrolling methods filling it.
 
-        :param str fpath : tracked .yaml file
-        :param int deque_max_len : size of the entry deque. default 20&#34;&#34;&#34;
+        parameters :
+        str fpath : tracked .yaml file
+        int deque_max_len : size of the entry deque. default 20&#34;&#34;&#34;
         fpath = os.path.abspath(fpath)
         if not os.path.exists(fpath):
             open(fpath, &#39;w+&#39;).close()
@@ -83,9 +84,10 @@ class LogManagerWrapper :
         &#34;&#34;&#34;collect documents from the current one going up in the bound file (previous entries) and appends them in the deque, optionally filtering them using a header and content
     #filtering function. moves the cursor up the file.
 
-    :param func header_cond_function : filtering function with an access to every LogEntryField except the deserialized content
-    :param func content_cond_function : filtering function also accounting for deserialized content
-    :param bool inf_scroll : ignore search timeout. default : False&#34;&#34;&#34;
+    parameters :
+     func header_cond_function : filtering function with an access to every LogEntryField except the deserialized content
+     func content_cond_function : filtering function also accounting for deserialized content
+     bool inf_scroll : ignore search timeout. default : False&#34;&#34;&#34;
         result = 0
         if len(self.queue)!=0 and self.queue[0] is not None:
             self._logmanager.byte_jump( self.queue[0].total_extension[0] + self.queue[0].total_extension[1]//2) #set cursor position to earliest entry
@@ -104,7 +106,8 @@ class LogManagerWrapper :
     def scroll(self, n, header_cond_function = None, content_cond_function = None , inf_scroll = False) :
         &#34;&#34;&#34;calls scroll_up and scroll_down multiple time to move along the document.
 
-        :param int n : amount of valid entries we go over.&#34;&#34;&#34;
+        parameters :
+        int n : amount of valid entries we go over. moves up the file if n&lt;0 , down otherwise&#34;&#34;&#34;
         if n == 0:
             return None
         elif n &gt; 0 :
@@ -304,9 +307,11 @@ class LogManagerWrapper :
 
     def jump_first(self,refill = True,header_cond_function = None, content_cond_function = None):
         &#34;&#34;&#34;move to beginning of file.
-        :param bool refill : if True, reset the entry deque
-        :param header_cond_function : header filter function used if refilling
-        :param content_cond_function :content filter&#34;&#34;&#34;
+
+        parameters :
+         bool refill : if True, reset the entry deque
+         header_cond_function : header filter function used if refilling
+         content_cond_function :content filter&#34;&#34;&#34;
         self.nothing_up_close = False
         self.nothing_down_close = False
 
@@ -591,21 +596,23 @@ class LogEntry :
 <span>(</span><span>fpath, deque_max_len=20)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>wrapper on LogManager rust struct providing convenience functions and type conversions to Rust compatible types.</p>
-<p>ctor, initializes a LogManager object and a deque for entries.</p>
-<p>:param str fpath : tracked .yaml file
-:param int deque_max_len : size of the entry deque. default 20</p></div>
+<div class="desc"><p>wrapper on LogManager rust struct providing convenience functions and type conversions to Rust compatible types.
+contains a deque of current entries and scrolling methods filling it.</p>
+<p>parameters :
+str fpath : tracked .yaml file
+int deque_max_len : size of the entry deque. default 20</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class LogManagerWrapper :
-    &#34;&#34;&#34;wrapper on LogManager rust struct providing convenience functions and type conversions to Rust compatible types.&#34;&#34;&#34;
     def __init__(self,fpath, deque_max_len = 20):
-        &#34;&#34;&#34;ctor, initializes a LogManager object and a deque for entries.
+        &#34;&#34;&#34;wrapper on LogManager rust struct providing convenience functions and type conversions to Rust compatible types.
+        contains a deque of current entries and scrolling methods filling it.
 
-        :param str fpath : tracked .yaml file
-        :param int deque_max_len : size of the entry deque. default 20&#34;&#34;&#34;
+        parameters :
+        str fpath : tracked .yaml file
+        int deque_max_len : size of the entry deque. default 20&#34;&#34;&#34;
         fpath = os.path.abspath(fpath)
         if not os.path.exists(fpath):
             open(fpath, &#39;w+&#39;).close()
@@ -634,9 +641,10 @@ class LogEntry :
         &#34;&#34;&#34;collect documents from the current one going up in the bound file (previous entries) and appends them in the deque, optionally filtering them using a header and content
     #filtering function. moves the cursor up the file.
 
-    :param func header_cond_function : filtering function with an access to every LogEntryField except the deserialized content
-    :param func content_cond_function : filtering function also accounting for deserialized content
-    :param bool inf_scroll : ignore search timeout. default : False&#34;&#34;&#34;
+    parameters :
+     func header_cond_function : filtering function with an access to every LogEntryField except the deserialized content
+     func content_cond_function : filtering function also accounting for deserialized content
+     bool inf_scroll : ignore search timeout. default : False&#34;&#34;&#34;
         result = 0
         if len(self.queue)!=0 and self.queue[0] is not None:
             self._logmanager.byte_jump( self.queue[0].total_extension[0] + self.queue[0].total_extension[1]//2) #set cursor position to earliest entry
@@ -655,7 +663,8 @@ class LogEntry :
     def scroll(self, n, header_cond_function = None, content_cond_function = None , inf_scroll = False) :
         &#34;&#34;&#34;calls scroll_up and scroll_down multiple time to move along the document.
 
-        :param int n : amount of valid entries we go over.&#34;&#34;&#34;
+        parameters :
+        int n : amount of valid entries we go over. moves up the file if n&lt;0 , down otherwise&#34;&#34;&#34;
         if n == 0:
             return None
         elif n &gt; 0 :
@@ -855,9 +864,11 @@ class LogEntry :
 
     def jump_first(self,refill = True,header_cond_function = None, content_cond_function = None):
         &#34;&#34;&#34;move to beginning of file.
-        :param bool refill : if True, reset the entry deque
-        :param header_cond_function : header filter function used if refilling
-        :param content_cond_function :content filter&#34;&#34;&#34;
+
+        parameters :
+         bool refill : if True, reset the entry deque
+         header_cond_function : header filter function used if refilling
+         content_cond_function :content filter&#34;&#34;&#34;
         self.nothing_up_close = False
         self.nothing_down_close = False
 
@@ -1132,19 +1143,22 @@ which also optionally meet a user defined criterium using a function of signatur
 <span>def <span class="ident">jump_first</span></span>(<span>self, refill=True, header_cond_function=None, content_cond_function=None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>move to beginning of file.
-:param bool refill : if True, reset the entry deque
-:param header_cond_function : header filter function used if refilling
-:param content_cond_function :content filter</p></div>
+<div class="desc"><p>move to beginning of file.</p>
+<p>parameters :
+bool refill : if True, reset the entry deque
+header_cond_function : header filter function used if refilling
+content_cond_function :content filter</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def jump_first(self,refill = True,header_cond_function = None, content_cond_function = None):
     &#34;&#34;&#34;move to beginning of file.
-    :param bool refill : if True, reset the entry deque
-    :param header_cond_function : header filter function used if refilling
-    :param content_cond_function :content filter&#34;&#34;&#34;
+
+    parameters :
+     bool refill : if True, reset the entry deque
+     header_cond_function : header filter function used if refilling
+     content_cond_function :content filter&#34;&#34;&#34;
     self.nothing_up_close = False
     self.nothing_down_close = False
 
@@ -1274,7 +1288,8 @@ calling move on an empty file.</p></div>
 </code></dt>
 <dd>
 <div class="desc"><p>calls scroll_up and scroll_down multiple time to move along the document.</p>
-<p>:param int n : amount of valid entries we go over.</p></div>
+<p>parameters :
+int n : amount of valid entries we go over. moves up the file if n&lt;0 , down otherwise</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1282,7 +1297,8 @@ calling move on an empty file.</p></div>
 <pre><code class="python">def scroll(self, n, header_cond_function = None, content_cond_function = None , inf_scroll = False) :
     &#34;&#34;&#34;calls scroll_up and scroll_down multiple time to move along the document.
 
-    :param int n : amount of valid entries we go over.&#34;&#34;&#34;
+    parameters :
+    int n : amount of valid entries we go over. moves up the file if n&lt;0 , down otherwise&#34;&#34;&#34;
     if n == 0:
         return None
     elif n &gt; 0 :

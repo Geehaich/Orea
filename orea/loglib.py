@@ -21,12 +21,13 @@ class LogLevels(Enum) : #classic log levels for most applications
 DEFAULT_CRAWL_TIMEOUT = timedelta(seconds = 180)
 
 class LogManagerWrapper :
-    """wrapper on LogManager rust struct providing convenience functions and type conversions to Rust compatible types."""
     def __init__(self,fpath, deque_max_len = 20):
-        """ctor, initializes a LogManager object and a deque for entries.
+        """wrapper on LogManager rust struct providing convenience functions and type conversions to Rust compatible types.
+        contains a deque of current entries and scrolling methods filling it.
 
-        :param str fpath : tracked .yaml file
-        :param int deque_max_len : size of the entry deque. default 20"""
+        parameters :
+        str fpath : tracked .yaml file
+        int deque_max_len : size of the entry deque. default 20"""
         fpath = os.path.abspath(fpath)
         if not os.path.exists(fpath):
             open(fpath, 'w+').close()
@@ -55,9 +56,10 @@ class LogManagerWrapper :
         """collect documents from the current one going up in the bound file (previous entries) and appends them in the deque, optionally filtering them using a header and content
     #filtering function. moves the cursor up the file.
 
-    :param func header_cond_function : filtering function with an access to every LogEntryField except the deserialized content
-    :param func content_cond_function : filtering function also accounting for deserialized content
-    :param bool inf_scroll : ignore search timeout. default : False"""
+    parameters :
+     func header_cond_function : filtering function with an access to every LogEntryField except the deserialized content
+     func content_cond_function : filtering function also accounting for deserialized content
+     bool inf_scroll : ignore search timeout. default : False"""
         result = 0
         if len(self.queue)!=0 and self.queue[0] is not None:
             self._logmanager.byte_jump( self.queue[0].total_extension[0] + self.queue[0].total_extension[1]//2) #set cursor position to earliest entry
@@ -76,7 +78,8 @@ class LogManagerWrapper :
     def scroll(self, n, header_cond_function = None, content_cond_function = None , inf_scroll = False) :
         """calls scroll_up and scroll_down multiple time to move along the document.
 
-        :param int n : amount of valid entries we go over."""
+        parameters :
+        int n : amount of valid entries we go over. moves up the file if n<0 , down otherwise"""
         if n == 0:
             return None
         elif n > 0 :
@@ -276,9 +279,11 @@ class LogManagerWrapper :
 
     def jump_first(self,refill = True,header_cond_function = None, content_cond_function = None):
         """move to beginning of file.
-        :param bool refill : if True, reset the entry deque
-        :param header_cond_function : header filter function used if refilling
-        :param content_cond_function :content filter"""
+
+        parameters :
+         bool refill : if True, reset the entry deque
+         header_cond_function : header filter function used if refilling
+         content_cond_function :content filter"""
         self.nothing_up_close = False
         self.nothing_down_close = False
 
