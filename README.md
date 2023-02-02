@@ -1,4 +1,4 @@
-#Orea
+# Orea
 
 Orea is a logging library allowing you to append additional data to your entries. 
 
@@ -66,10 +66,10 @@ log_manager.new_entry("message",3,"topic",{"foo":15,"bar": [1,2,3,["and",0.3]]} 
  
  
  
-##Misc.
+## Misc.
 the *tests* folder contains a few scripts to generate files full of random entries to test the base library or the interface's response to file events
  
-##Known issues
+### Known issues
 
 - CLI crashes if the size of the printout exceeds a hard-coded amount of lines
 - CLI crashes if terminal size is too small, will add exception handling later
