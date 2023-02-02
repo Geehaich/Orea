@@ -1,0 +1,1450 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>orea.cursed.mainwin API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>orea.cursed.mainwin</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import datetime
+import sys
+sys.path.append(&#34;../&#34;)
+import curses
+from curses import wrapper
+from textwrap import TextWrapper
+from orea.logcontroller import LogController
+from orea.cursed.subwins import timewindow_select,date_select,get_str_bottom_line, help_win
+from threading import Lock
+
+DATE_FOREGROUND = curses.COLOR_GREEN|curses.A_BOLD
+OPTIONAL_DATA_FOREGROUND = curses.COLOR_BLUE|curses.A_DIM
+MIN_COLUMNS = 80
+PAD_HEIGHT = 1024
+LAST_LINE_OFFSET = 3
+MIN_LINES = 35
+HEADER_WIDTH = 39 # all lines start with a fixed header incating data presence, date and level, e.g : +DATA | YY-MM-DD hh:mm:ss.mmm | FATAL |
+
+
+
+class CP:
+    &#34;&#34;&#34;Class used to initiate a few color pairs and formats, and keep references to them&#34;&#34;&#34;
+    ERR =  LEVEL_FATAL =None
+    LEVEL_ERROR  =None
+    LEVEL_WARN  =None
+    LEVEL_INFO  =None
+    LEVEL_DEBUG  =None
+    LEVEL_TRACE  = 0
+    DATE  = None
+    OPTIONAL_DATA  =None
+
+    STRING_LEVELS = [&#34;FATAL&#34;, &#34;ERROR&#34;, &#34;WARN &#34;, &#34;DEBUG&#34;, &#34;TRACE&#34;, &#34;INFO &#34;]
+    @classmethod
+    def init_color_pairs(cls):
+        curses.init_pair(5, curses.COLOR_RED, curses.COLOR_BLACK)
+        cls.ERR = curses.color_pair(5) | curses.A_BOLD | curses.A_BLINK
+        cls.LEVEL_FATAL = cls.ERR
+        curses.init_pair(6, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+        cls.LEVEL_ERROR = curses.color_pair(6) | curses.A_BOLD
+        curses.init_pair(7, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+        cls. LEVEL_WARN = curses.color_pair(7) | curses.A_BOLD
+        curses.init_pair(8, curses.COLOR_BLUE, curses.COLOR_BLACK)
+        cls.LEVEL_INFO = curses.color_pair(8) | curses.A_BOLD
+        curses.init_pair(9, curses.COLOR_CYAN, curses.COLOR_BLACK)
+        cls.LEVEL_DEBUG = curses.color_pair(9) | curses.A_BOLD
+        cls.LEVEL_TRACE = curses.color_pair(0) | curses.A_BOLD
+        curses.init_pair(11,curses.COLOR_GREEN, curses.COLOR_BLACK)
+        cls. DATE = curses.color_pair(11) | curses.A_BOLD
+        curses.init_pair(12, curses.COLOR_BLUE, curses.COLOR_BLACK)
+        cls.OPTIONAL_DATA = curses.color_pair(12) | curses.A_BOLD | curses.A_ITALIC
+
+        cls.LIST_CP = [cls.LEVEL_FATAL, cls.LEVEL_ERROR, cls.LEVEL_WARN,
+                       cls.LEVEL_DEBUG, cls.LEVEL_TRACE, cls.LEVEL_INFO]
+
+
+
+
+class CMainWindow :
+
+    def __init__(self, pathlist_or_logcon):
+        &#34;&#34;&#34;a main application window based on curses
+        parameter :
+        pathlist_or_logcon : list of filepaths or LogControllerObject&#34;&#34;&#34;
+        self.screen = curses.initscr()
+        self.windims = self.screen.getmaxyx()
+        self.pad = curses.newpad(PAD_HEIGHT,self.windims[1])
+        curses.start_color()
+        CP.init_color_pairs()
+        self.screen.keypad(True)
+        curses.noecho()
+        self.wrapper = TextWrapper(subsequent_indent=&#34;\t&#34;,width=self.windims[1])
+        self.wrapper.initial_indent = HEADER_WIDTH * &#34; &#34;
+
+        self.controller = None
+        if type(pathlist_or_logcon) == LogController :
+            self.controller = pathlist_or_logcon
+        elif type(pathlist_or_logcon) == list :
+            self.controller = LogController(pathlist_or_logcon)
+
+        self.paused = False
+        self.new_ents = 0
+
+        self.thread_lock = Lock()
+
+        self.end_notify_thread = False
+
+        self._highest_line = PAD_HEIGHT-LAST_LINE_OFFSET #lowest y value with actual text printed
+        self._cur_scroll_index = PAD_HEIGHT-LAST_LINE_OFFSET- self.windims[0] #lowest y value on screen (top line)
+
+        self.cur_disp_func = self.output_entry_short
+        self.refresh_entries()
+        self.statusprint()
+
+
+
+    def __del__(self):
+
+        curses.nocbreak()
+        self.screen.keypad(False)
+        curses.echo()
+        curses.endwin()
+
+    def key_bindings(self,char):
+        &#34;&#34;&#34;dispatch function for input characters.
+
+        parameters :
+
+        int char : character returned by a getch() call&#34;&#34;&#34;
+
+        self.pad.clear()
+        if char == curses.KEY_RESIZE :
+            self.screen.clear()
+            self.windims = self.screen.getmaxyx()
+            self.screen.resize(*self.windims)
+            self.pad.resize(PAD_HEIGHT, self.windims[1])
+            self.wrapper.width = self.windims[1]-1
+            if self.windims[0]&lt;10 and self.windims[1] &lt; 50 :
+                curses.resizeterm(10,60)
+
+        elif char== curses.KEY_UP :
+            self.pause()
+            self.controller.scroll(-1)
+
+        elif char== curses.KEY_DOWN :
+            self.pause()
+            self.new_ents = 0
+            self.controller.scroll(1)
+
+        elif char== 337: #SHIFT + KEY_UP
+            self.pause()
+            self.controller.scroll(-5)
+        elif char== 336 : #SHIFT + KEY_DOWN
+            self.pause()
+            self.controller.scroll(5)
+        elif char ==  curses.KEY_PPAGE :
+            self.window_scroll(-5)
+        elif char == curses.KEY_NPAGE:
+            self.window_scroll(5)
+
+        elif char == ord(&#39; &#39;):
+            if self.paused :
+                self.unpause()
+            else :
+                self.pause()
+
+
+        elif char == curses.KEY_LEFT :
+            new_level = max(self.controller.max_level-1,0)
+            if new_level != self.controller.max_level :
+                self.controller.max_level = new_level
+                self.controller.update_filter()
+        elif char == curses.KEY_RIGHT :
+            new_level = min(self.controller.max_level+1,99)
+            if new_level != self.controller.max_level :
+                self.controller.max_level = new_level
+                self.controller.update_filter()
+
+        elif char == ord(&#34;d&#34;) :
+            self.pause()
+            self.controller.search_date(date_select(self))
+
+        elif char == 4 : #CTRL+d
+            self.controller.set_timeout(timewindow_select(self))
+
+        elif char == curses.KEY_HOME :
+            self.pause()
+            self.controller.jump_first()
+        elif char == curses.KEY_END:
+            self.controller.jump_last()
+
+        elif char == 20 : #CTRL+t
+            substring = get_str_bottom_line(self,&#34;search topic (* for all): &#34;, self.controller.topic_substring)
+            if substring == &#34;*&#34; :
+                self.controller.topic_substring = &#34;&#34;
+                self.controller.update_filter()
+            else :
+                if substring not in [&#34;&#34;,self.controller.topic_substring] :
+                    self.controller.topic_substring = substring
+                    self.controller.update_filter()
+
+        elif char == 6 : #CTRL+f
+            substring = get_str_bottom_line(self,&#34;search message (* for all): &#34;,self.controller.message_substring)
+            if substring == &#34;*&#34; :
+                self.controller.message_substring = &#34;&#34;
+                self.controller.update_filter()
+            else:
+                if substring not in [&#34;&#34;,self.controller.message_substring]:
+                    self.controller.message_substring = substring
+                    self.controller.update_filter()
+
+        elif char == curses.KEY_F1 :
+            help_win(self)
+
+        elif char == ord(&#39;+&#39;):
+            self.change_display_mode()
+
+
+        self.refresh_entries()
+        self.statusprint()
+        self.screen.refresh()
+    def output_head(self,entry ,show_data=True):
+        &#34;&#34;&#34;write first fields of an entry to the screen using appropriate colors.&#34;&#34;&#34;
+        position = self.pad.getyx()
+        self.pad.move(position[0], 0)
+        if entry.dic_extension[1] != 0 and show_data:
+            self.pad.addstr(&#34;+DATA&#34;, CP.OPTIONAL_DATA)
+            self.pad.addstr(&#34; | &#34;)
+        else :
+            self.pad.addstr(&#34;-----&#34;)
+            self.pad.addstr(&#34; | &#34;)
+        self.pad.addstr(entry.date[2:-3], CP.DATE)
+        self.pad.addstr(&#34; | &#34;)
+        if entry.level &lt; 6:
+            self.pad.addstr(CP.STRING_LEVELS[entry.level], CP.LIST_CP[entry.level])
+        else:
+            self.screen.addstr(str(entry.level))
+        self.pad.addstr(&#34; | &#34;)
+
+    def output_entry_short(self,entry) -&gt; int :
+        &#34;&#34;&#34;write an entry as simplified syntax on current line, accounting for terminal width. returns the row value
+        for coherence with output_entry_long&#34;&#34;&#34;
+
+        if entry is None :
+            return self.pad.getyx()[0]
+
+
+        self.output_head(entry)
+
+        y,x = self.pad.getyx()
+
+
+        space_left = self.windims[1] - 4 - x
+        space_available_topic = max(int(space_left * len(entry.topic)/(1+len(entry.topic)+len(entry.message))),4)
+        space_available_message = int(space_left * len(entry.message)/(1+len(entry.topic)+len(entry.message)))
+        one_line_msg = entry.message.replace(&#39;\n&#39;,&#34; &#34;)
+        if len(entry.topic) &gt; 4 and len(entry.topic)&gt;space_available_topic:
+            self.pad.addstr(entry.topic[:space_available_topic-3]+&#34;... | &#34;)
+        else :
+            self.pad.addstr(entry.topic[:space_available_topic]+&#34; | &#34;)
+        if len(one_line_msg)&gt; space_available_message:
+            self.pad.addstr(one_line_msg[:space_available_message-3]+&#34;...&#34;)
+        else :
+            self.pad.addstr(one_line_msg[:space_available_message])
+
+        return y #return line for coherence with output_entry_long
+
+    def output_entry_long(self,entry):
+        &#34;&#34;&#34;write a single entry as a multiline string with full message and data if applicable. return the highest row
+        it wrote on for subsequent&#34;&#34;&#34;
+
+
+        y,x = self.pad.getyx()
+        if entry is None :
+            return
+
+        if y == 0 :
+            self.output_entry_short(entry)
+            return
+        d = entry.deserialize()
+        string_towrap = &#34;{} | {} &#34;.format(entry.topic, entry.message)
+
+        self.wrapper.width = self.windims[1]
+        wraparray = self.wrapper.wrap(string_towrap)
+        last_nondict_idx = len(wraparray)
+        if d is not None :
+            str_d = str(d)
+            self.wrapper.initial_indent = (6)*&#39; &#39;
+            wraparray += self.wrapper.wrap(str_d)
+            self.wrapper.initial_indent = (HEADER_WIDTH)*&#39; &#39;
+
+        wraparray [0] = wraparray[0][HEADER_WIDTH:] #remove spaces from first line
+
+        if y-len(wraparray) &lt;0 :
+            self.output_entry_short(entry) #overwrite previous head
+            return y
+
+        self.pad.move(y-len(wraparray),0)
+        self.output_head(entry)
+        self.pad.addstr(wraparray[0])
+        for i in range(1,len(wraparray)) :
+            if i &lt; last_nondict_idx :
+                self.pad.addstr(y-len(wraparray)+i,0,wraparray[i])
+            else :
+                self.pad.addstr(y-len(wraparray)+i,0,wraparray[i],curses.color_pair(0)|curses.A_BOLD) #print dict content as different color
+
+        return y-len(wraparray)+1
+
+    def refresh_entries(self):
+        &#34;&#34;&#34;refresh screen with current list of entries using the currently selected output function&#34;&#34;&#34;
+
+        try :
+            self.pad.clear()
+            if self.cur_disp_func == self.output_entry_short:
+                self.pad.move(PAD_HEIGHT-LAST_LINE_OFFSET-3,0)
+            else :
+                self.pad.move(PAD_HEIGHT - LAST_LINE_OFFSET - 2, 0)
+            high = PAD_HEIGHT-LAST_LINE_OFFSET
+            if self.controller.contents_changed :
+                self.controller.collect_entries()
+            for entry in self.controller.sorted_entries :
+                high = self.cur_disp_func(entry)
+                if high == 0 :
+                    break
+                else :
+                    self.pad.move(high-1,0)
+
+            self._highest_line = high
+            if self._highest_line &gt;= PAD_HEIGHT-LAST_LINE_OFFSET- self.windims[0] :
+                self._cur_scroll_index = PAD_HEIGHT-LAST_LINE_OFFSET- self.windims[0]
+            else :
+                self._cur_scroll_index = max(self._cur_scroll_index,self._highest_line)
+
+            self.pad.refresh(self._cur_scroll_index,0,0,0,self.windims[0]-LAST_LINE_OFFSET,self.windims[1])
+
+        except :
+            self.screen.clear()
+            self.screen.addstr(0,0,&#34;printing entries failed, please resize window and press any key&#34;)
+
+    def window_scroll(self,amount):
+        &#34;&#34;&#34;scroll along window if the total list of entries takes more lines than displayed on screen&#34;&#34;&#34;
+        self._cur_scroll_index += amount
+        self._cur_scroll_index = max(self._cur_scroll_index,self._highest_line)
+        self._cur_scroll_index = min(self._cur_scroll_index,PAD_HEIGHT-LAST_LINE_OFFSET-self.windims[0])
+
+        self.pad.refresh(self._cur_scroll_index-1, 0, 0, 0, self.windims[0] - LAST_LINE_OFFSET, self.windims[1])
+
+    def statusprint(self):
+        &#34;&#34;&#34;print relevant info such as current max level or pause status on the sedond last line of the screen.&#34;&#34;&#34;
+        try :
+            self.screen.move(self.windims[0]-2,0)
+            self.screen.clrtoeol()
+            self.screen.addstr(&#34;    MAX LV : &#34;)
+            if self.controller.max_level &lt; 6 :
+                self.screen.addstr(CP.STRING_LEVELS[self.controller.max_level], CP.LIST_CP[self.controller.max_level])
+            else :
+                self.screen.addstr(str(self.controller.max_level))
+            self.screen.addstr(&#34;    DISP : &#34;)
+            if self.cur_disp_func == self.output_entry_short :
+                self.screen.addstr(&#34;SHRT&#34;,curses.color_pair(0)|curses.A_NORMAL)
+            else:
+                self.screen.addstr(&#34;FULL&#34;,curses.color_pair(0)|curses.A_REVERSE)
+
+            self.screen.addstr(&#34;    EST. POS : &#34;,CP.LEVEL_INFO)
+            mp = self.controller.mean_position()
+            if mp&lt;10 :
+                self.screen.addch(&#34; &#34;)
+            self.screen.addstr(str(mp)+&#34;%  &#34;)
+
+            if self.paused :
+                self.screen.addstr(&#34;||&#34;,curses.color_pair(0)|curses.A_REVERSE)
+                self.screen.addstr(&#34;  &#34;)
+                if self.new_ents !=0 :
+                    self.screen.addstr(str(self.new_ents) + &#34;new&#34;)
+
+            l_up,l_down = self.controller.is_search_zone_limit()
+            if self.paused and (l_up or l_down ):
+                self.screen.addstr(&#34;  SRCH TMOUT&#34;)
+
+
+
+        except : #window probably too short. function not that important, can afford ignoring exceptions
+            pass
+
+    def key_bind_threadfunc(self):
+        &#34;&#34;&#34;wrap keyboard interaction in a single function to call it inside threads&#34;&#34;&#34;
+
+        cur_key = 0
+        while cur_key != ord(&#34;q&#34;):
+            self.thread_lock.acquire()
+            try:
+                self.key_bindings(cur_key)
+            finally:
+                self.thread_lock.release()
+                cur_key = self.screen.getch()
+
+        self.end_notify_thread = True
+
+
+    def pause(self):
+        if not self.paused :
+
+            self.paused = True
+            self.new_ents = 0
+
+    def unpause(self):
+        if  self.paused :
+            self.paused = False
+            self.new_ents = 0
+            self.controller.jump_last()
+
+    def on_file_mod_event(self):
+        &#34;&#34;&#34;function called when a file event is raised by Inotify. either scrolls until the last entries available (live)
+        or increments the new entry counter (paused)&#34;&#34;&#34;
+        if self.paused == False:
+            while not self.controller.all_eof() and self.paused == False:
+                self.thread_lock.acquire()
+                self.controller.scroll(1,inf_scroll=True)
+                self.controller.collect_entries()
+                self.refresh_entries()
+                self.statusprint()
+                self.thread_lock.release()
+        else :
+            self.thread_lock.acquire()
+            self.new_ents +=1
+            self.statusprint()
+            self.thread_lock.release()
+
+
+
+    def change_display_mode(self):
+        &#34;&#34;&#34;toggle full or short entry display mode&#34;&#34;&#34;
+        if self.cur_disp_func == self.output_entry_short :
+            self.cur_disp_func = self.output_entry_long
+            return
+        else :
+            self.cur_disp_func = self.output_entry_short</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="orea.cursed.mainwin.CMainWindow"><code class="flex name class">
+<span>class <span class="ident">CMainWindow</span></span>
+<span>(</span><span>pathlist_or_logcon)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>a main application window based on curses
+parameter :
+pathlist_or_logcon : list of filepaths or LogControllerObject</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CMainWindow :
+
+    def __init__(self, pathlist_or_logcon):
+        &#34;&#34;&#34;a main application window based on curses
+        parameter :
+        pathlist_or_logcon : list of filepaths or LogControllerObject&#34;&#34;&#34;
+        self.screen = curses.initscr()
+        self.windims = self.screen.getmaxyx()
+        self.pad = curses.newpad(PAD_HEIGHT,self.windims[1])
+        curses.start_color()
+        CP.init_color_pairs()
+        self.screen.keypad(True)
+        curses.noecho()
+        self.wrapper = TextWrapper(subsequent_indent=&#34;\t&#34;,width=self.windims[1])
+        self.wrapper.initial_indent = HEADER_WIDTH * &#34; &#34;
+
+        self.controller = None
+        if type(pathlist_or_logcon) == LogController :
+            self.controller = pathlist_or_logcon
+        elif type(pathlist_or_logcon) == list :
+            self.controller = LogController(pathlist_or_logcon)
+
+        self.paused = False
+        self.new_ents = 0
+
+        self.thread_lock = Lock()
+
+        self.end_notify_thread = False
+
+        self._highest_line = PAD_HEIGHT-LAST_LINE_OFFSET #lowest y value with actual text printed
+        self._cur_scroll_index = PAD_HEIGHT-LAST_LINE_OFFSET- self.windims[0] #lowest y value on screen (top line)
+
+        self.cur_disp_func = self.output_entry_short
+        self.refresh_entries()
+        self.statusprint()
+
+
+
+    def __del__(self):
+
+        curses.nocbreak()
+        self.screen.keypad(False)
+        curses.echo()
+        curses.endwin()
+
+    def key_bindings(self,char):
+        &#34;&#34;&#34;dispatch function for input characters.
+
+        parameters :
+
+        int char : character returned by a getch() call&#34;&#34;&#34;
+
+        self.pad.clear()
+        if char == curses.KEY_RESIZE :
+            self.screen.clear()
+            self.windims = self.screen.getmaxyx()
+            self.screen.resize(*self.windims)
+            self.pad.resize(PAD_HEIGHT, self.windims[1])
+            self.wrapper.width = self.windims[1]-1
+            if self.windims[0]&lt;10 and self.windims[1] &lt; 50 :
+                curses.resizeterm(10,60)
+
+        elif char== curses.KEY_UP :
+            self.pause()
+            self.controller.scroll(-1)
+
+        elif char== curses.KEY_DOWN :
+            self.pause()
+            self.new_ents = 0
+            self.controller.scroll(1)
+
+        elif char== 337: #SHIFT + KEY_UP
+            self.pause()
+            self.controller.scroll(-5)
+        elif char== 336 : #SHIFT + KEY_DOWN
+            self.pause()
+            self.controller.scroll(5)
+        elif char ==  curses.KEY_PPAGE :
+            self.window_scroll(-5)
+        elif char == curses.KEY_NPAGE:
+            self.window_scroll(5)
+
+        elif char == ord(&#39; &#39;):
+            if self.paused :
+                self.unpause()
+            else :
+                self.pause()
+
+
+        elif char == curses.KEY_LEFT :
+            new_level = max(self.controller.max_level-1,0)
+            if new_level != self.controller.max_level :
+                self.controller.max_level = new_level
+                self.controller.update_filter()
+        elif char == curses.KEY_RIGHT :
+            new_level = min(self.controller.max_level+1,99)
+            if new_level != self.controller.max_level :
+                self.controller.max_level = new_level
+                self.controller.update_filter()
+
+        elif char == ord(&#34;d&#34;) :
+            self.pause()
+            self.controller.search_date(date_select(self))
+
+        elif char == 4 : #CTRL+d
+            self.controller.set_timeout(timewindow_select(self))
+
+        elif char == curses.KEY_HOME :
+            self.pause()
+            self.controller.jump_first()
+        elif char == curses.KEY_END:
+            self.controller.jump_last()
+
+        elif char == 20 : #CTRL+t
+            substring = get_str_bottom_line(self,&#34;search topic (* for all): &#34;, self.controller.topic_substring)
+            if substring == &#34;*&#34; :
+                self.controller.topic_substring = &#34;&#34;
+                self.controller.update_filter()
+            else :
+                if substring not in [&#34;&#34;,self.controller.topic_substring] :
+                    self.controller.topic_substring = substring
+                    self.controller.update_filter()
+
+        elif char == 6 : #CTRL+f
+            substring = get_str_bottom_line(self,&#34;search message (* for all): &#34;,self.controller.message_substring)
+            if substring == &#34;*&#34; :
+                self.controller.message_substring = &#34;&#34;
+                self.controller.update_filter()
+            else:
+                if substring not in [&#34;&#34;,self.controller.message_substring]:
+                    self.controller.message_substring = substring
+                    self.controller.update_filter()
+
+        elif char == curses.KEY_F1 :
+            help_win(self)
+
+        elif char == ord(&#39;+&#39;):
+            self.change_display_mode()
+
+
+        self.refresh_entries()
+        self.statusprint()
+        self.screen.refresh()
+    def output_head(self,entry ,show_data=True):
+        &#34;&#34;&#34;write first fields of an entry to the screen using appropriate colors.&#34;&#34;&#34;
+        position = self.pad.getyx()
+        self.pad.move(position[0], 0)
+        if entry.dic_extension[1] != 0 and show_data:
+            self.pad.addstr(&#34;+DATA&#34;, CP.OPTIONAL_DATA)
+            self.pad.addstr(&#34; | &#34;)
+        else :
+            self.pad.addstr(&#34;-----&#34;)
+            self.pad.addstr(&#34; | &#34;)
+        self.pad.addstr(entry.date[2:-3], CP.DATE)
+        self.pad.addstr(&#34; | &#34;)
+        if entry.level &lt; 6:
+            self.pad.addstr(CP.STRING_LEVELS[entry.level], CP.LIST_CP[entry.level])
+        else:
+            self.screen.addstr(str(entry.level))
+        self.pad.addstr(&#34; | &#34;)
+
+    def output_entry_short(self,entry) -&gt; int :
+        &#34;&#34;&#34;write an entry as simplified syntax on current line, accounting for terminal width. returns the row value
+        for coherence with output_entry_long&#34;&#34;&#34;
+
+        if entry is None :
+            return self.pad.getyx()[0]
+
+
+        self.output_head(entry)
+
+        y,x = self.pad.getyx()
+
+
+        space_left = self.windims[1] - 4 - x
+        space_available_topic = max(int(space_left * len(entry.topic)/(1+len(entry.topic)+len(entry.message))),4)
+        space_available_message = int(space_left * len(entry.message)/(1+len(entry.topic)+len(entry.message)))
+        one_line_msg = entry.message.replace(&#39;\n&#39;,&#34; &#34;)
+        if len(entry.topic) &gt; 4 and len(entry.topic)&gt;space_available_topic:
+            self.pad.addstr(entry.topic[:space_available_topic-3]+&#34;... | &#34;)
+        else :
+            self.pad.addstr(entry.topic[:space_available_topic]+&#34; | &#34;)
+        if len(one_line_msg)&gt; space_available_message:
+            self.pad.addstr(one_line_msg[:space_available_message-3]+&#34;...&#34;)
+        else :
+            self.pad.addstr(one_line_msg[:space_available_message])
+
+        return y #return line for coherence with output_entry_long
+
+    def output_entry_long(self,entry):
+        &#34;&#34;&#34;write a single entry as a multiline string with full message and data if applicable. return the highest row
+        it wrote on for subsequent&#34;&#34;&#34;
+
+
+        y,x = self.pad.getyx()
+        if entry is None :
+            return
+
+        if y == 0 :
+            self.output_entry_short(entry)
+            return
+        d = entry.deserialize()
+        string_towrap = &#34;{} | {} &#34;.format(entry.topic, entry.message)
+
+        self.wrapper.width = self.windims[1]
+        wraparray = self.wrapper.wrap(string_towrap)
+        last_nondict_idx = len(wraparray)
+        if d is not None :
+            str_d = str(d)
+            self.wrapper.initial_indent = (6)*&#39; &#39;
+            wraparray += self.wrapper.wrap(str_d)
+            self.wrapper.initial_indent = (HEADER_WIDTH)*&#39; &#39;
+
+        wraparray [0] = wraparray[0][HEADER_WIDTH:] #remove spaces from first line
+
+        if y-len(wraparray) &lt;0 :
+            self.output_entry_short(entry) #overwrite previous head
+            return y
+
+        self.pad.move(y-len(wraparray),0)
+        self.output_head(entry)
+        self.pad.addstr(wraparray[0])
+        for i in range(1,len(wraparray)) :
+            if i &lt; last_nondict_idx :
+                self.pad.addstr(y-len(wraparray)+i,0,wraparray[i])
+            else :
+                self.pad.addstr(y-len(wraparray)+i,0,wraparray[i],curses.color_pair(0)|curses.A_BOLD) #print dict content as different color
+
+        return y-len(wraparray)+1
+
+    def refresh_entries(self):
+        &#34;&#34;&#34;refresh screen with current list of entries using the currently selected output function&#34;&#34;&#34;
+
+        try :
+            self.pad.clear()
+            if self.cur_disp_func == self.output_entry_short:
+                self.pad.move(PAD_HEIGHT-LAST_LINE_OFFSET-3,0)
+            else :
+                self.pad.move(PAD_HEIGHT - LAST_LINE_OFFSET - 2, 0)
+            high = PAD_HEIGHT-LAST_LINE_OFFSET
+            if self.controller.contents_changed :
+                self.controller.collect_entries()
+            for entry in self.controller.sorted_entries :
+                high = self.cur_disp_func(entry)
+                if high == 0 :
+                    break
+                else :
+                    self.pad.move(high-1,0)
+
+            self._highest_line = high
+            if self._highest_line &gt;= PAD_HEIGHT-LAST_LINE_OFFSET- self.windims[0] :
+                self._cur_scroll_index = PAD_HEIGHT-LAST_LINE_OFFSET- self.windims[0]
+            else :
+                self._cur_scroll_index = max(self._cur_scroll_index,self._highest_line)
+
+            self.pad.refresh(self._cur_scroll_index,0,0,0,self.windims[0]-LAST_LINE_OFFSET,self.windims[1])
+
+        except :
+            self.screen.clear()
+            self.screen.addstr(0,0,&#34;printing entries failed, please resize window and press any key&#34;)
+
+    def window_scroll(self,amount):
+        &#34;&#34;&#34;scroll along window if the total list of entries takes more lines than displayed on screen&#34;&#34;&#34;
+        self._cur_scroll_index += amount
+        self._cur_scroll_index = max(self._cur_scroll_index,self._highest_line)
+        self._cur_scroll_index = min(self._cur_scroll_index,PAD_HEIGHT-LAST_LINE_OFFSET-self.windims[0])
+
+        self.pad.refresh(self._cur_scroll_index-1, 0, 0, 0, self.windims[0] - LAST_LINE_OFFSET, self.windims[1])
+
+    def statusprint(self):
+        &#34;&#34;&#34;print relevant info such as current max level or pause status on the sedond last line of the screen.&#34;&#34;&#34;
+        try :
+            self.screen.move(self.windims[0]-2,0)
+            self.screen.clrtoeol()
+            self.screen.addstr(&#34;    MAX LV : &#34;)
+            if self.controller.max_level &lt; 6 :
+                self.screen.addstr(CP.STRING_LEVELS[self.controller.max_level], CP.LIST_CP[self.controller.max_level])
+            else :
+                self.screen.addstr(str(self.controller.max_level))
+            self.screen.addstr(&#34;    DISP : &#34;)
+            if self.cur_disp_func == self.output_entry_short :
+                self.screen.addstr(&#34;SHRT&#34;,curses.color_pair(0)|curses.A_NORMAL)
+            else:
+                self.screen.addstr(&#34;FULL&#34;,curses.color_pair(0)|curses.A_REVERSE)
+
+            self.screen.addstr(&#34;    EST. POS : &#34;,CP.LEVEL_INFO)
+            mp = self.controller.mean_position()
+            if mp&lt;10 :
+                self.screen.addch(&#34; &#34;)
+            self.screen.addstr(str(mp)+&#34;%  &#34;)
+
+            if self.paused :
+                self.screen.addstr(&#34;||&#34;,curses.color_pair(0)|curses.A_REVERSE)
+                self.screen.addstr(&#34;  &#34;)
+                if self.new_ents !=0 :
+                    self.screen.addstr(str(self.new_ents) + &#34;new&#34;)
+
+            l_up,l_down = self.controller.is_search_zone_limit()
+            if self.paused and (l_up or l_down ):
+                self.screen.addstr(&#34;  SRCH TMOUT&#34;)
+
+
+
+        except : #window probably too short. function not that important, can afford ignoring exceptions
+            pass
+
+    def key_bind_threadfunc(self):
+        &#34;&#34;&#34;wrap keyboard interaction in a single function to call it inside threads&#34;&#34;&#34;
+
+        cur_key = 0
+        while cur_key != ord(&#34;q&#34;):
+            self.thread_lock.acquire()
+            try:
+                self.key_bindings(cur_key)
+            finally:
+                self.thread_lock.release()
+                cur_key = self.screen.getch()
+
+        self.end_notify_thread = True
+
+
+    def pause(self):
+        if not self.paused :
+
+            self.paused = True
+            self.new_ents = 0
+
+    def unpause(self):
+        if  self.paused :
+            self.paused = False
+            self.new_ents = 0
+            self.controller.jump_last()
+
+    def on_file_mod_event(self):
+        &#34;&#34;&#34;function called when a file event is raised by Inotify. either scrolls until the last entries available (live)
+        or increments the new entry counter (paused)&#34;&#34;&#34;
+        if self.paused == False:
+            while not self.controller.all_eof() and self.paused == False:
+                self.thread_lock.acquire()
+                self.controller.scroll(1,inf_scroll=True)
+                self.controller.collect_entries()
+                self.refresh_entries()
+                self.statusprint()
+                self.thread_lock.release()
+        else :
+            self.thread_lock.acquire()
+            self.new_ents +=1
+            self.statusprint()
+            self.thread_lock.release()
+
+
+
+    def change_display_mode(self):
+        &#34;&#34;&#34;toggle full or short entry display mode&#34;&#34;&#34;
+        if self.cur_disp_func == self.output_entry_short :
+            self.cur_disp_func = self.output_entry_long
+            return
+        else :
+            self.cur_disp_func = self.output_entry_short</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="orea.cursed.mainwin.CMainWindow.change_display_mode"><code class="name flex">
+<span>def <span class="ident">change_display_mode</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>toggle full or short entry display mode</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def change_display_mode(self):
+    &#34;&#34;&#34;toggle full or short entry display mode&#34;&#34;&#34;
+    if self.cur_disp_func == self.output_entry_short :
+        self.cur_disp_func = self.output_entry_long
+        return
+    else :
+        self.cur_disp_func = self.output_entry_short</code></pre>
+</details>
+</dd>
+<dt id="orea.cursed.mainwin.CMainWindow.key_bind_threadfunc"><code class="name flex">
+<span>def <span class="ident">key_bind_threadfunc</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>wrap keyboard interaction in a single function to call it inside threads</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def key_bind_threadfunc(self):
+    &#34;&#34;&#34;wrap keyboard interaction in a single function to call it inside threads&#34;&#34;&#34;
+
+    cur_key = 0
+    while cur_key != ord(&#34;q&#34;):
+        self.thread_lock.acquire()
+        try:
+            self.key_bindings(cur_key)
+        finally:
+            self.thread_lock.release()
+            cur_key = self.screen.getch()
+
+    self.end_notify_thread = True</code></pre>
+</details>
+</dd>
+<dt id="orea.cursed.mainwin.CMainWindow.key_bindings"><code class="name flex">
+<span>def <span class="ident">key_bindings</span></span>(<span>self, char)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>dispatch function for input characters.</p>
+<p>parameters :</p>
+<p>int char : character returned by a getch() call</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def key_bindings(self,char):
+    &#34;&#34;&#34;dispatch function for input characters.
+
+    parameters :
+
+    int char : character returned by a getch() call&#34;&#34;&#34;
+
+    self.pad.clear()
+    if char == curses.KEY_RESIZE :
+        self.screen.clear()
+        self.windims = self.screen.getmaxyx()
+        self.screen.resize(*self.windims)
+        self.pad.resize(PAD_HEIGHT, self.windims[1])
+        self.wrapper.width = self.windims[1]-1
+        if self.windims[0]&lt;10 and self.windims[1] &lt; 50 :
+            curses.resizeterm(10,60)
+
+    elif char== curses.KEY_UP :
+        self.pause()
+        self.controller.scroll(-1)
+
+    elif char== curses.KEY_DOWN :
+        self.pause()
+        self.new_ents = 0
+        self.controller.scroll(1)
+
+    elif char== 337: #SHIFT + KEY_UP
+        self.pause()
+        self.controller.scroll(-5)
+    elif char== 336 : #SHIFT + KEY_DOWN
+        self.pause()
+        self.controller.scroll(5)
+    elif char ==  curses.KEY_PPAGE :
+        self.window_scroll(-5)
+    elif char == curses.KEY_NPAGE:
+        self.window_scroll(5)
+
+    elif char == ord(&#39; &#39;):
+        if self.paused :
+            self.unpause()
+        else :
+            self.pause()
+
+
+    elif char == curses.KEY_LEFT :
+        new_level = max(self.controller.max_level-1,0)
+        if new_level != self.controller.max_level :
+            self.controller.max_level = new_level
+            self.controller.update_filter()
+    elif char == curses.KEY_RIGHT :
+        new_level = min(self.controller.max_level+1,99)
+        if new_level != self.controller.max_level :
+            self.controller.max_level = new_level
+            self.controller.update_filter()
+
+    elif char == ord(&#34;d&#34;) :
+        self.pause()
+        self.controller.search_date(date_select(self))
+
+    elif char == 4 : #CTRL+d
+        self.controller.set_timeout(timewindow_select(self))
+
+    elif char == curses.KEY_HOME :
+        self.pause()
+        self.controller.jump_first()
+    elif char == curses.KEY_END:
+        self.controller.jump_last()
+
+    elif char == 20 : #CTRL+t
+        substring = get_str_bottom_line(self,&#34;search topic (* for all): &#34;, self.controller.topic_substring)
+        if substring == &#34;*&#34; :
+            self.controller.topic_substring = &#34;&#34;
+            self.controller.update_filter()
+        else :
+            if substring not in [&#34;&#34;,self.controller.topic_substring] :
+                self.controller.topic_substring = substring
+                self.controller.update_filter()
+
+    elif char == 6 : #CTRL+f
+        substring = get_str_bottom_line(self,&#34;search message (* for all): &#34;,self.controller.message_substring)
+        if substring == &#34;*&#34; :
+            self.controller.message_substring = &#34;&#34;
+            self.controller.update_filter()
+        else:
+            if substring not in [&#34;&#34;,self.controller.message_substring]:
+                self.controller.message_substring = substring
+                self.controller.update_filter()
+
+    elif char == curses.KEY_F1 :
+        help_win(self)
+
+    elif char == ord(&#39;+&#39;):
+        self.change_display_mode()
+
+
+    self.refresh_entries()
+    self.statusprint()
+    self.screen.refresh()</code></pre>
+</details>
+</dd>
+<dt id="orea.cursed.mainwin.CMainWindow.on_file_mod_event"><code class="name flex">
+<span>def <span class="ident">on_file_mod_event</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>function called when a file event is raised by Inotify. either scrolls until the last entries available (live)
+or increments the new entry counter (paused)</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def on_file_mod_event(self):
+    &#34;&#34;&#34;function called when a file event is raised by Inotify. either scrolls until the last entries available (live)
+    or increments the new entry counter (paused)&#34;&#34;&#34;
+    if self.paused == False:
+        while not self.controller.all_eof() and self.paused == False:
+            self.thread_lock.acquire()
+            self.controller.scroll(1,inf_scroll=True)
+            self.controller.collect_entries()
+            self.refresh_entries()
+            self.statusprint()
+            self.thread_lock.release()
+    else :
+        self.thread_lock.acquire()
+        self.new_ents +=1
+        self.statusprint()
+        self.thread_lock.release()</code></pre>
+</details>
+</dd>
+<dt id="orea.cursed.mainwin.CMainWindow.output_entry_long"><code class="name flex">
+<span>def <span class="ident">output_entry_long</span></span>(<span>self, entry)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>write a single entry as a multiline string with full message and data if applicable. return the highest row
+it wrote on for subsequent</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def output_entry_long(self,entry):
+    &#34;&#34;&#34;write a single entry as a multiline string with full message and data if applicable. return the highest row
+    it wrote on for subsequent&#34;&#34;&#34;
+
+
+    y,x = self.pad.getyx()
+    if entry is None :
+        return
+
+    if y == 0 :
+        self.output_entry_short(entry)
+        return
+    d = entry.deserialize()
+    string_towrap = &#34;{} | {} &#34;.format(entry.topic, entry.message)
+
+    self.wrapper.width = self.windims[1]
+    wraparray = self.wrapper.wrap(string_towrap)
+    last_nondict_idx = len(wraparray)
+    if d is not None :
+        str_d = str(d)
+        self.wrapper.initial_indent = (6)*&#39; &#39;
+        wraparray += self.wrapper.wrap(str_d)
+        self.wrapper.initial_indent = (HEADER_WIDTH)*&#39; &#39;
+
+    wraparray [0] = wraparray[0][HEADER_WIDTH:] #remove spaces from first line
+
+    if y-len(wraparray) &lt;0 :
+        self.output_entry_short(entry) #overwrite previous head
+        return y
+
+    self.pad.move(y-len(wraparray),0)
+    self.output_head(entry)
+    self.pad.addstr(wraparray[0])
+    for i in range(1,len(wraparray)) :
+        if i &lt; last_nondict_idx :
+            self.pad.addstr(y-len(wraparray)+i,0,wraparray[i])
+        else :
+            self.pad.addstr(y-len(wraparray)+i,0,wraparray[i],curses.color_pair(0)|curses.A_BOLD) #print dict content as different color
+
+    return y-len(wraparray)+1</code></pre>
+</details>
+</dd>
+<dt id="orea.cursed.mainwin.CMainWindow.output_entry_short"><code class="name flex">
+<span>def <span class="ident">output_entry_short</span></span>(<span>self, entry) ‑> int</span>
+</code></dt>
+<dd>
+<div class="desc"><p>write an entry as simplified syntax on current line, accounting for terminal width. returns the row value
+for coherence with output_entry_long</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def output_entry_short(self,entry) -&gt; int :
+    &#34;&#34;&#34;write an entry as simplified syntax on current line, accounting for terminal width. returns the row value
+    for coherence with output_entry_long&#34;&#34;&#34;
+
+    if entry is None :
+        return self.pad.getyx()[0]
+
+
+    self.output_head(entry)
+
+    y,x = self.pad.getyx()
+
+
+    space_left = self.windims[1] - 4 - x
+    space_available_topic = max(int(space_left * len(entry.topic)/(1+len(entry.topic)+len(entry.message))),4)
+    space_available_message = int(space_left * len(entry.message)/(1+len(entry.topic)+len(entry.message)))
+    one_line_msg = entry.message.replace(&#39;\n&#39;,&#34; &#34;)
+    if len(entry.topic) &gt; 4 and len(entry.topic)&gt;space_available_topic:
+        self.pad.addstr(entry.topic[:space_available_topic-3]+&#34;... | &#34;)
+    else :
+        self.pad.addstr(entry.topic[:space_available_topic]+&#34; | &#34;)
+    if len(one_line_msg)&gt; space_available_message:
+        self.pad.addstr(one_line_msg[:space_available_message-3]+&#34;...&#34;)
+    else :
+        self.pad.addstr(one_line_msg[:space_available_message])
+
+    return y #return line for coherence with output_entry_long</code></pre>
+</details>
+</dd>
+<dt id="orea.cursed.mainwin.CMainWindow.output_head"><code class="name flex">
+<span>def <span class="ident">output_head</span></span>(<span>self, entry, show_data=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>write first fields of an entry to the screen using appropriate colors.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def output_head(self,entry ,show_data=True):
+    &#34;&#34;&#34;write first fields of an entry to the screen using appropriate colors.&#34;&#34;&#34;
+    position = self.pad.getyx()
+    self.pad.move(position[0], 0)
+    if entry.dic_extension[1] != 0 and show_data:
+        self.pad.addstr(&#34;+DATA&#34;, CP.OPTIONAL_DATA)
+        self.pad.addstr(&#34; | &#34;)
+    else :
+        self.pad.addstr(&#34;-----&#34;)
+        self.pad.addstr(&#34; | &#34;)
+    self.pad.addstr(entry.date[2:-3], CP.DATE)
+    self.pad.addstr(&#34; | &#34;)
+    if entry.level &lt; 6:
+        self.pad.addstr(CP.STRING_LEVELS[entry.level], CP.LIST_CP[entry.level])
+    else:
+        self.screen.addstr(str(entry.level))
+    self.pad.addstr(&#34; | &#34;)</code></pre>
+</details>
+</dd>
+<dt id="orea.cursed.mainwin.CMainWindow.pause"><code class="name flex">
+<span>def <span class="ident">pause</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pause(self):
+    if not self.paused :
+
+        self.paused = True
+        self.new_ents = 0</code></pre>
+</details>
+</dd>
+<dt id="orea.cursed.mainwin.CMainWindow.refresh_entries"><code class="name flex">
+<span>def <span class="ident">refresh_entries</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>refresh screen with current list of entries using the currently selected output function</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def refresh_entries(self):
+    &#34;&#34;&#34;refresh screen with current list of entries using the currently selected output function&#34;&#34;&#34;
+
+    try :
+        self.pad.clear()
+        if self.cur_disp_func == self.output_entry_short:
+            self.pad.move(PAD_HEIGHT-LAST_LINE_OFFSET-3,0)
+        else :
+            self.pad.move(PAD_HEIGHT - LAST_LINE_OFFSET - 2, 0)
+        high = PAD_HEIGHT-LAST_LINE_OFFSET
+        if self.controller.contents_changed :
+            self.controller.collect_entries()
+        for entry in self.controller.sorted_entries :
+            high = self.cur_disp_func(entry)
+            if high == 0 :
+                break
+            else :
+                self.pad.move(high-1,0)
+
+        self._highest_line = high
+        if self._highest_line &gt;= PAD_HEIGHT-LAST_LINE_OFFSET- self.windims[0] :
+            self._cur_scroll_index = PAD_HEIGHT-LAST_LINE_OFFSET- self.windims[0]
+        else :
+            self._cur_scroll_index = max(self._cur_scroll_index,self._highest_line)
+
+        self.pad.refresh(self._cur_scroll_index,0,0,0,self.windims[0]-LAST_LINE_OFFSET,self.windims[1])
+
+    except :
+        self.screen.clear()
+        self.screen.addstr(0,0,&#34;printing entries failed, please resize window and press any key&#34;)</code></pre>
+</details>
+</dd>
+<dt id="orea.cursed.mainwin.CMainWindow.statusprint"><code class="name flex">
+<span>def <span class="ident">statusprint</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>print relevant info such as current max level or pause status on the sedond last line of the screen.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def statusprint(self):
+    &#34;&#34;&#34;print relevant info such as current max level or pause status on the sedond last line of the screen.&#34;&#34;&#34;
+    try :
+        self.screen.move(self.windims[0]-2,0)
+        self.screen.clrtoeol()
+        self.screen.addstr(&#34;    MAX LV : &#34;)
+        if self.controller.max_level &lt; 6 :
+            self.screen.addstr(CP.STRING_LEVELS[self.controller.max_level], CP.LIST_CP[self.controller.max_level])
+        else :
+            self.screen.addstr(str(self.controller.max_level))
+        self.screen.addstr(&#34;    DISP : &#34;)
+        if self.cur_disp_func == self.output_entry_short :
+            self.screen.addstr(&#34;SHRT&#34;,curses.color_pair(0)|curses.A_NORMAL)
+        else:
+            self.screen.addstr(&#34;FULL&#34;,curses.color_pair(0)|curses.A_REVERSE)
+
+        self.screen.addstr(&#34;    EST. POS : &#34;,CP.LEVEL_INFO)
+        mp = self.controller.mean_position()
+        if mp&lt;10 :
+            self.screen.addch(&#34; &#34;)
+        self.screen.addstr(str(mp)+&#34;%  &#34;)
+
+        if self.paused :
+            self.screen.addstr(&#34;||&#34;,curses.color_pair(0)|curses.A_REVERSE)
+            self.screen.addstr(&#34;  &#34;)
+            if self.new_ents !=0 :
+                self.screen.addstr(str(self.new_ents) + &#34;new&#34;)
+
+        l_up,l_down = self.controller.is_search_zone_limit()
+        if self.paused and (l_up or l_down ):
+            self.screen.addstr(&#34;  SRCH TMOUT&#34;)
+
+
+
+    except : #window probably too short. function not that important, can afford ignoring exceptions
+        pass</code></pre>
+</details>
+</dd>
+<dt id="orea.cursed.mainwin.CMainWindow.unpause"><code class="name flex">
+<span>def <span class="ident">unpause</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def unpause(self):
+    if  self.paused :
+        self.paused = False
+        self.new_ents = 0
+        self.controller.jump_last()</code></pre>
+</details>
+</dd>
+<dt id="orea.cursed.mainwin.CMainWindow.window_scroll"><code class="name flex">
+<span>def <span class="ident">window_scroll</span></span>(<span>self, amount)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>scroll along window if the total list of entries takes more lines than displayed on screen</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def window_scroll(self,amount):
+    &#34;&#34;&#34;scroll along window if the total list of entries takes more lines than displayed on screen&#34;&#34;&#34;
+    self._cur_scroll_index += amount
+    self._cur_scroll_index = max(self._cur_scroll_index,self._highest_line)
+    self._cur_scroll_index = min(self._cur_scroll_index,PAD_HEIGHT-LAST_LINE_OFFSET-self.windims[0])
+
+    self.pad.refresh(self._cur_scroll_index-1, 0, 0, 0, self.windims[0] - LAST_LINE_OFFSET, self.windims[1])</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="orea.cursed.mainwin.CP"><code class="flex name class">
+<span>class <span class="ident">CP</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class used to initiate a few color pairs and formats, and keep references to them</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CP:
+    &#34;&#34;&#34;Class used to initiate a few color pairs and formats, and keep references to them&#34;&#34;&#34;
+    ERR =  LEVEL_FATAL =None
+    LEVEL_ERROR  =None
+    LEVEL_WARN  =None
+    LEVEL_INFO  =None
+    LEVEL_DEBUG  =None
+    LEVEL_TRACE  = 0
+    DATE  = None
+    OPTIONAL_DATA  =None
+
+    STRING_LEVELS = [&#34;FATAL&#34;, &#34;ERROR&#34;, &#34;WARN &#34;, &#34;DEBUG&#34;, &#34;TRACE&#34;, &#34;INFO &#34;]
+    @classmethod
+    def init_color_pairs(cls):
+        curses.init_pair(5, curses.COLOR_RED, curses.COLOR_BLACK)
+        cls.ERR = curses.color_pair(5) | curses.A_BOLD | curses.A_BLINK
+        cls.LEVEL_FATAL = cls.ERR
+        curses.init_pair(6, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+        cls.LEVEL_ERROR = curses.color_pair(6) | curses.A_BOLD
+        curses.init_pair(7, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+        cls. LEVEL_WARN = curses.color_pair(7) | curses.A_BOLD
+        curses.init_pair(8, curses.COLOR_BLUE, curses.COLOR_BLACK)
+        cls.LEVEL_INFO = curses.color_pair(8) | curses.A_BOLD
+        curses.init_pair(9, curses.COLOR_CYAN, curses.COLOR_BLACK)
+        cls.LEVEL_DEBUG = curses.color_pair(9) | curses.A_BOLD
+        cls.LEVEL_TRACE = curses.color_pair(0) | curses.A_BOLD
+        curses.init_pair(11,curses.COLOR_GREEN, curses.COLOR_BLACK)
+        cls. DATE = curses.color_pair(11) | curses.A_BOLD
+        curses.init_pair(12, curses.COLOR_BLUE, curses.COLOR_BLACK)
+        cls.OPTIONAL_DATA = curses.color_pair(12) | curses.A_BOLD | curses.A_ITALIC
+
+        cls.LIST_CP = [cls.LEVEL_FATAL, cls.LEVEL_ERROR, cls.LEVEL_WARN,
+                       cls.LEVEL_DEBUG, cls.LEVEL_TRACE, cls.LEVEL_INFO]</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="orea.cursed.mainwin.CP.DATE"><code class="name">var <span class="ident">DATE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="orea.cursed.mainwin.CP.ERR"><code class="name">var <span class="ident">ERR</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="orea.cursed.mainwin.CP.LEVEL_DEBUG"><code class="name">var <span class="ident">LEVEL_DEBUG</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="orea.cursed.mainwin.CP.LEVEL_ERROR"><code class="name">var <span class="ident">LEVEL_ERROR</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="orea.cursed.mainwin.CP.LEVEL_FATAL"><code class="name">var <span class="ident">LEVEL_FATAL</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="orea.cursed.mainwin.CP.LEVEL_INFO"><code class="name">var <span class="ident">LEVEL_INFO</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="orea.cursed.mainwin.CP.LEVEL_TRACE"><code class="name">var <span class="ident">LEVEL_TRACE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="orea.cursed.mainwin.CP.LEVEL_WARN"><code class="name">var <span class="ident">LEVEL_WARN</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="orea.cursed.mainwin.CP.OPTIONAL_DATA"><code class="name">var <span class="ident">OPTIONAL_DATA</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="orea.cursed.mainwin.CP.STRING_LEVELS"><code class="name">var <span class="ident">STRING_LEVELS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Static methods</h3>
+<dl>
+<dt id="orea.cursed.mainwin.CP.init_color_pairs"><code class="name flex">
+<span>def <span class="ident">init_color_pairs</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@classmethod
+def init_color_pairs(cls):
+    curses.init_pair(5, curses.COLOR_RED, curses.COLOR_BLACK)
+    cls.ERR = curses.color_pair(5) | curses.A_BOLD | curses.A_BLINK
+    cls.LEVEL_FATAL = cls.ERR
+    curses.init_pair(6, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+    cls.LEVEL_ERROR = curses.color_pair(6) | curses.A_BOLD
+    curses.init_pair(7, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+    cls. LEVEL_WARN = curses.color_pair(7) | curses.A_BOLD
+    curses.init_pair(8, curses.COLOR_BLUE, curses.COLOR_BLACK)
+    cls.LEVEL_INFO = curses.color_pair(8) | curses.A_BOLD
+    curses.init_pair(9, curses.COLOR_CYAN, curses.COLOR_BLACK)
+    cls.LEVEL_DEBUG = curses.color_pair(9) | curses.A_BOLD
+    cls.LEVEL_TRACE = curses.color_pair(0) | curses.A_BOLD
+    curses.init_pair(11,curses.COLOR_GREEN, curses.COLOR_BLACK)
+    cls. DATE = curses.color_pair(11) | curses.A_BOLD
+    curses.init_pair(12, curses.COLOR_BLUE, curses.COLOR_BLACK)
+    cls.OPTIONAL_DATA = curses.color_pair(12) | curses.A_BOLD | curses.A_ITALIC
+
+    cls.LIST_CP = [cls.LEVEL_FATAL, cls.LEVEL_ERROR, cls.LEVEL_WARN,
+                   cls.LEVEL_DEBUG, cls.LEVEL_TRACE, cls.LEVEL_INFO]</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="orea.cursed" href="index.html">orea.cursed</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="orea.cursed.mainwin.CMainWindow" href="#orea.cursed.mainwin.CMainWindow">CMainWindow</a></code></h4>
+<ul class="two-column">
+<li><code><a title="orea.cursed.mainwin.CMainWindow.change_display_mode" href="#orea.cursed.mainwin.CMainWindow.change_display_mode">change_display_mode</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CMainWindow.key_bind_threadfunc" href="#orea.cursed.mainwin.CMainWindow.key_bind_threadfunc">key_bind_threadfunc</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CMainWindow.key_bindings" href="#orea.cursed.mainwin.CMainWindow.key_bindings">key_bindings</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CMainWindow.on_file_mod_event" href="#orea.cursed.mainwin.CMainWindow.on_file_mod_event">on_file_mod_event</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CMainWindow.output_entry_long" href="#orea.cursed.mainwin.CMainWindow.output_entry_long">output_entry_long</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CMainWindow.output_entry_short" href="#orea.cursed.mainwin.CMainWindow.output_entry_short">output_entry_short</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CMainWindow.output_head" href="#orea.cursed.mainwin.CMainWindow.output_head">output_head</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CMainWindow.pause" href="#orea.cursed.mainwin.CMainWindow.pause">pause</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CMainWindow.refresh_entries" href="#orea.cursed.mainwin.CMainWindow.refresh_entries">refresh_entries</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CMainWindow.statusprint" href="#orea.cursed.mainwin.CMainWindow.statusprint">statusprint</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CMainWindow.unpause" href="#orea.cursed.mainwin.CMainWindow.unpause">unpause</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CMainWindow.window_scroll" href="#orea.cursed.mainwin.CMainWindow.window_scroll">window_scroll</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="orea.cursed.mainwin.CP" href="#orea.cursed.mainwin.CP">CP</a></code></h4>
+<ul class="two-column">
+<li><code><a title="orea.cursed.mainwin.CP.DATE" href="#orea.cursed.mainwin.CP.DATE">DATE</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CP.ERR" href="#orea.cursed.mainwin.CP.ERR">ERR</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CP.LEVEL_DEBUG" href="#orea.cursed.mainwin.CP.LEVEL_DEBUG">LEVEL_DEBUG</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CP.LEVEL_ERROR" href="#orea.cursed.mainwin.CP.LEVEL_ERROR">LEVEL_ERROR</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CP.LEVEL_FATAL" href="#orea.cursed.mainwin.CP.LEVEL_FATAL">LEVEL_FATAL</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CP.LEVEL_INFO" href="#orea.cursed.mainwin.CP.LEVEL_INFO">LEVEL_INFO</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CP.LEVEL_TRACE" href="#orea.cursed.mainwin.CP.LEVEL_TRACE">LEVEL_TRACE</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CP.LEVEL_WARN" href="#orea.cursed.mainwin.CP.LEVEL_WARN">LEVEL_WARN</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CP.OPTIONAL_DATA" href="#orea.cursed.mainwin.CP.OPTIONAL_DATA">OPTIONAL_DATA</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CP.STRING_LEVELS" href="#orea.cursed.mainwin.CP.STRING_LEVELS">STRING_LEVELS</a></code></li>
+<li><code><a title="orea.cursed.mainwin.CP.init_color_pairs" href="#orea.cursed.mainwin.CP.init_color_pairs">init_color_pairs</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>
