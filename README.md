@@ -12,7 +12,7 @@ Orea is a logging library allowing you to append additional data to your entries
 
  ![YAML representation of entry](images/yaml_example.png) 
  
- entries are represented as above, in multidocument YAML files. Each has mandatory fields **(date, topic,message & level) ** making up an entry header, and anything past those is considered an optional payload.
+ entries are represented as above, in multidocument YAML files. Each has mandatory fields **(date, topic,message & level)** making up an entry header, and anything past those is considered optional data and will be deserialized to a dict.
  
  
 We provide through our rust API a **LogManager** struct used to parse those files and detect relevant document boundaries, either by moving incrementally along the file or using a dichotomical date search, and a **LogManagerWrapper** class in our Python API wrapping the previous one, containing a deque to keep a rolling amount of entries, and providing you with a method to write new entries in the same file.
